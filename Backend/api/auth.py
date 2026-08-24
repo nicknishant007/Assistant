@@ -6,10 +6,10 @@ from database.session import get_db
 from services.google_oauth import oauth
 from config.settings import settings
 from utils.security import create_access_token
-from services.user_service import (
-    get_user_by_email,
-    create_user
-)
+from services.user_service import (get_user_by_email,create_user)
+from dependencies.auth import get_current_user
+from Backend.database.models.user import User
+from fastapi.responses import JSONResponse
 
 router = APIRouter(
     prefix="/api/auth",
@@ -82,4 +82,26 @@ async def callback_google(
         max_age=60 * 60 * 24 * 7
     )
 
+    return response
+
+#GET CURRENT USER
+@router.get("/me")
+async def get_me(
+    current_user: User=Depends(get_current_user)):#before running this endpoint, make sure to login with google and get the access token in the cookie 
+                                                   #(Depends(get_current_user) will extract the user from the access token in the cookie)
+    return{
+        "id":current_user.id,
+        "email":current_user.email,
+        "name":current_user.full_name
+    }
+
+#LOGOUT
+@router.post("/logout")
+async def logout():
+    response=JSONResponse(
+            {"message":"Logout Successful"}
+        )
+    response.delete_cookie(
+            key="access_token"
+        )
     return response

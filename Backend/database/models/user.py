@@ -1,18 +1,14 @@
 import uuid
 
 from datetime import datetime
-
-from sqlalchemy import String
-from sqlalchemy import DateTime
-
-from sqlalchemy.orm import Mapped
-from sqlalchemy.orm import mapped_column
+from sqlalchemy import String,DateTime
+from sqlalchemy.orm import Mapped,mapped_column
 
 from database.base import Base
 
 
 class User(Base):
-
+    #newer version of sqlalchemy uses Mapped and mapped_column instead of Column
     __tablename__ = "users"
 
     id: Mapped[str] = mapped_column(

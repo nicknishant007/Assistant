@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from database.models import User
+from Backend.database.models.user import User
 
 import uuid
 from datetime import datetime
