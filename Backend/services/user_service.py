@@ -1,6 +1,5 @@
 from sqlalchemy.orm import Session
-
-from Backend.database.models.user import User
+from database.models.user import User
 
 import uuid
 from datetime import datetime
@@ -41,3 +40,6 @@ def create_user(
     db.refresh(user)
 
     return user
+
+
+

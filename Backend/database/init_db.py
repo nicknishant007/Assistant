@@ -2,7 +2,7 @@ from database.base import Base
 from database.db import engine
 
 from database.models.user import User
-from database.models.user_itegration import UserIntegration
+from Backend.database.models.user_integration import UserIntegration
 from database.models.user_preference import UserPreference
 
 
