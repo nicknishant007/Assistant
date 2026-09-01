@@ -17,7 +17,6 @@ from services.calendar_service import (get_events,create_event,delete_event,upda
 from schemas.calendar import CreateEventRequest
 from schemas.calendar import UpdateEventRequest
 from schemas.calendar import DeleteEventRequest
-from services.calendar_service import get_calendar_service
 
 
 
@@ -214,7 +213,7 @@ async def update_calendar_event(
         current_user.id
     )
 
-    service = get_calendar_service(
+    service = build_calendar_service(
         integration.access_token
     )
 
@@ -242,7 +241,7 @@ async def delete_calendar_event(
         current_user.id
     )
 
-    service = get_calendar_service(
+    service = build_calendar_service(
         integration.access_token
     )
 

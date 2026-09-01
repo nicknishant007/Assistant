@@ -11,9 +11,9 @@ def build_calendar_service(
     
     integration = get_google_integration(
         db=db,
-        user_id=user_id)
+        user_id=user_id) 
 
-    if not integration:
+    if not integration: 
         raise Exception(
             "Google Calendar not connected"
         )
@@ -29,6 +29,8 @@ def build_calendar_service(
     )
 
     return service
+
+
 def get_events(
         db,
         user_id:str,
@@ -49,7 +51,7 @@ def get_events(
         )
     return events.get("items",[])
 
-##creat event
+##creat event  
 def create_event(
     db,
     user_id: str,
@@ -88,12 +90,19 @@ def create_event(
 
 ##UPDATE EVENT
 def update_event(
-    service,
+    db,
+    user_id: str,
     event_id: str,
     title: str,
     start_time: str,
     end_time: str
 ):
+
+    service = build_calendar_service(
+        db=db,
+        user_id=user_id
+    )
+
     event = {
         "summary": title,
         "start": {
@@ -106,7 +115,7 @@ def update_event(
         }
     }
 
-    updated_event = (
+    return (
         service.events()
         .update(
             calendarId="primary",
@@ -116,13 +125,17 @@ def update_event(
         .execute()
     )
 
-    return updated_event
-
 #Delete Event
 def delete_event(
-    service,
+    db,
+    user_id: str,
     event_id: str
 ):
+
+    service = build_calendar_service(
+        db=db,
+        user_id=user_id
+    )
 
     service.events().delete(
         calendarId="primary",
@@ -165,3 +178,53 @@ def get_day_events(
     )
 
     return events.get("items", [])
+
+##GET 7 DAY EVENT
+def get_events_range(
+    service,
+    start_date: datetime,
+    end_date: datetime
+):
+
+    events = (
+        service.events()
+        .list(
+            calendarId="primary",
+            timeMin=start_date.isoformat(),
+            timeMax=end_date.isoformat(),
+            singleEvents=True,
+            orderBy="startTime"
+        )
+        .execute()
+    )
+
+    return events.get("items", [])
+
+#find event by title 
+def find_event_by_title(
+    db,
+    user_id: str,
+    title: str
+):
+
+    events = get_events(
+        db=db,
+        user_id=user_id,
+        max_results=100
+    )
+
+    matching_events = []
+
+    for event in events:
+
+        if (
+            event.get("summary", "")
+            .lower()
+            == title.lower()
+        ):
+            matching_events.append(
+                event
+            )
+
+    return matching_events
+
