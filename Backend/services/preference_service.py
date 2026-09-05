@@ -1,4 +1,4 @@
-from sqlalchemy import Session
+from sqlalchemy.orm import Session
 from database.models.user_preference import UserPreference
 
 def get_user_preferences(

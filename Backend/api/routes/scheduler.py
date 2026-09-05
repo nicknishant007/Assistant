@@ -10,7 +10,7 @@ from schemas.scheduler import (
     RescheduleTaskRequest
 )
 
-from Backend.services.scheduler_service import (
+from services.scheduler_service import (
     schedule_task,
     reschedule_task,
     find_free_slots,

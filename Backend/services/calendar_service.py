@@ -1,26 +1,47 @@
+from email import message
+
 from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
+
+from config.settings import settings
 
 from services.integration_service import (get_google_integration)
 from datetime import datetime,timezone,timedelta
+from utils.date_resolver import resolve_day_name,resolve_day_of_month
 
 def build_calendar_service(
     db,
     user_id: str
 ):
-    
+
     integration = get_google_integration(
         db=db,
-        user_id=user_id) 
+        user_id=user_id
+    )
 
-    if not integration: 
+    if not integration:
         raise Exception(
             "Google Calendar not connected"
         )
 
     credentials = Credentials(
-        token=integration.access_token
+        token=integration.access_token,
+        refresh_token=integration.refresh_token,
+        token_uri="https://oauth2.googleapis.com/token",
+        client_id=settings.GOOGLE_CLIENT_ID,
+        client_secret=settings.GOOGLE_CLIENT_SECRET
     )
+
+    # Refresh expired token
+    if credentials.expired and credentials.refresh_token:
+
+        credentials.refresh(Request())
+
+        integration.access_token = credentials.token
+
+        db.commit()
+        db.refresh(integration)
 
     service = build(
         "calendar",
@@ -29,7 +50,6 @@ def build_calendar_service(
     )
 
     return service
-
 
 def get_events(
         db,
@@ -156,11 +176,7 @@ def get_day_events(
     start_of_day = datetime(
         date.year,
         date.month,
-        date.day,
-        0,
-        0,
-        0,
-        tzinfo=timezone.utc
+        date.day,0,0,0,tzinfo=timezone.utc
     )
 
     end_of_day = start_of_day + timedelta(days=1)
@@ -200,12 +216,41 @@ def get_events_range(
 
     return events.get("items", [])
 
-#find event by title 
+
+
+# FIND EVENT BY TITLE
+
+from datetime import datetime
+
 def find_event_by_title(
     db,
     user_id: str,
-    title: str
+    title: str,
+    date: str | None = None,
+    day: str | None = None
 ):
+
+    if not title.strip():
+        return {
+            "found": False,
+            "message": "Title is required.",
+            "best_match": None,
+            "alternatives": []
+        }
+
+    resolved_date = None
+    resolved_day = None
+
+    if date:
+        resolved_date = resolve_day_of_month(
+            int(date)
+        )
+
+    if day:
+        resolved_day = (
+            day.lower()
+            .strip()
+        )
 
     events = get_events(
         db=db,
@@ -213,18 +258,151 @@ def find_event_by_title(
         max_results=100
     )
 
-    matching_events = []
+    query = (
+        title.lower()
+        .strip()
+    )
+
+    scored_events = []
 
     for event in events:
 
-        if (
+        event_title = (
             event.get("summary", "")
             .lower()
-            == title.lower()
-        ):
-            matching_events.append(
-                event
+            .strip()
+        )
+
+        title_score = 0
+        date_score = 0
+        day_score = 0
+
+        # -------------------
+        # TITLE SCORE
+        # -------------------
+
+        if event_title == query:
+
+            title_score = 100
+
+        elif query in event_title:
+
+            title_score = 80
+
+        else:
+
+            query_words = set(
+                query.split()
             )
 
-    return matching_events
+            title_words = set(
+                event_title.split()
+            )
 
+            overlap = len(
+                query_words.intersection(
+                    title_words
+                )
+            )
+
+            title_score = overlap * 20
+
+        # -------------------
+        # DATE / DAY SCORE
+        # -------------------
+
+        try:
+
+            start_info = event.get(
+                "start",
+                {}
+            )
+
+            event_datetime = (
+                start_info.get("dateTime")
+                or start_info.get("date")
+            )
+
+            if event_datetime:
+
+                event_dt = (
+                    datetime.fromisoformat(
+                        event_datetime.replace(
+                            "Z",
+                            "+00:00"
+                        )
+                    )
+                )
+
+                event_date = (
+                    event_dt.date()
+                    .isoformat()
+                )
+
+                event_day = (
+                    event_dt.strftime("%A")
+                    .lower()
+                )
+
+                # Exact Date Match
+
+                if (
+                    resolved_date
+                    and event_date == resolved_date
+                ):
+                    date_score = 100
+
+                # Weekday Match
+
+                if (
+                    resolved_day
+                    and event_day == resolved_day
+                ):
+                    day_score = 100
+
+        except Exception:
+            pass
+
+        # -------------------
+        # FINAL SCORE
+        # -------------------
+
+        score = title_score
+
+        if resolved_date:
+            score += date_score * 0.3
+
+        if resolved_day:
+            score += day_score * 0.2
+
+        if score > 0:
+
+            scored_events.append({
+                "event_id": event.get("id"),
+                "title": event.get("summary"),
+                "start": event.get("start"),
+                "end": event.get("end"),
+                "score": round(score, 2)
+            })
+
+    if not scored_events:
+
+        return {
+            "found": False,
+            "message": "No events found matching the title.",
+            "best_match": None,
+            "alternatives": []
+        }
+
+    scored_events.sort(
+        key=lambda x: x["score"],
+        reverse=True
+    )
+
+    top_events = scored_events[:3]
+
+    return {
+        "found": True,
+        "best_match": top_events[0],
+        "alternatives": top_events[1:]
+    }

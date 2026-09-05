@@ -12,7 +12,7 @@ class CreateEventRequest(BaseModel):
 class UpdateEventRequest(BaseModel):
 
     event_id: str
-    title: str
+    title: str |None = None
     start_time: str
     end_time: str
 
@@ -20,3 +20,9 @@ class UpdateEventRequest(BaseModel):
 class DeleteEventRequest(BaseModel):
 
     event_id: str
+
+
+class FindEventRequest(BaseModel):
+    title: str
+    date: str | None = None
+    day: str | None = None

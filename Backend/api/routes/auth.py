@@ -13,8 +13,8 @@ from fastapi.responses import JSONResponse
 from services.integration_service import create_or_update_integration
 from services.integration_service import get_google_integration
 from services.calendar_service import build_calendar_service
-from services.calendar_service import (get_events,create_event,delete_event,update_event)
-from schemas.calendar import CreateEventRequest
+from services.calendar_service import (get_events,create_event,delete_event,update_event,find_event_by_title)
+from schemas.calendar import CreateEventRequest, FindEventRequest
 from schemas.calendar import UpdateEventRequest
 from schemas.calendar import DeleteEventRequest
 
@@ -33,7 +33,9 @@ async def login_google(
 
     return await oauth.google.authorize_redirect(
         request,
-        settings.GOOGLE_REDIRECT_URI
+        settings.GOOGLE_REDIRECT_URI,
+        access_type="offline",
+        prompt="consent"
     )
 
 
@@ -200,6 +202,25 @@ async def create_calendar_event(
     )
 
     return event
+
+
+#Search event by title
+@router.post("/events/search")
+async def search_event(
+    data: FindEventRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+
+    return find_event_by_title(
+        db=db,
+        user_id=current_user.id,
+        title=data.title,
+        date=data.date,
+        day=data.day
+    )
+
+
 #Update event
 @router.put("/events")
 async def update_calendar_event(
@@ -208,24 +229,14 @@ async def update_calendar_event(
     db: Session = Depends(get_db)
 ):
 
-    integration = get_google_integration(
-        db,
-        current_user.id
-    )
-
-    service = build_calendar_service(
-        integration.access_token
-    )
-
-    event = update_event(
-        service=service,
+    return update_event(
+        db=db,
+        user_id=current_user.id,
         event_id=data.event_id,
         title=data.title,
         start_time=data.start_time,
         end_time=data.end_time
     )
-
-    return event
 
 
 #Delete event
@@ -236,16 +247,9 @@ async def delete_calendar_event(
     db: Session = Depends(get_db)
 ):
 
-    integration = get_google_integration(
-        db,
-        current_user.id
-    )
-
-    service = build_calendar_service(
-        integration.access_token
-    )
-
     return delete_event(
-        service,
-        data.event_id
+        db=db,
+        user_id=current_user.id,
+        event_id=data.event_id
     )
+

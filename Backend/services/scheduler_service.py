@@ -2,8 +2,7 @@ from  datetime import datetime,timedelta,timezone
 from services.preference_service import (get_user_preferences)
 
 from services.calendar_service import (build_calendar_service,get_day_events,create_event,get_events_range
-                                       ,find_event_by_title,update_event,
-                                       delete_event)
+                                       ,find_event_by_title,update_event,delete_event)
 
 #helper find slot
 def find_free_slots_from_events(

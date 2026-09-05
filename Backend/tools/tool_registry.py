@@ -1,5 +1,3 @@
-# agent/tool_registry.py
-
 from tools.calendar_tool import (
     get_events_tool,
     find_event_by_title_tool
@@ -120,3 +118,26 @@ TOOLS = {
     }
     
 }
+
+def get_tool_descriptions():
+
+    descriptions = []
+
+    for name, info in TOOLS.items():
+
+        descriptions.append(
+            f"""
+Tool: {name}
+
+Description:
+{info['description']}
+
+Use When:
+{info['use_when']}
+
+Parameters:
+{info['parameters']}
+"""
+        )
+
+    return "\n".join(descriptions)

@@ -7,3 +7,5 @@ pydantic-settings
 google-api-python-client
 google-auth
 google-auth-oauthlib
+authlib
+python-jose

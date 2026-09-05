@@ -1,30 +1,86 @@
-from typing import Optional
+from pydantic import BaseModel, Field
+from typing import Optional, Any
 
 
-class AgentState:
+class AgentState(BaseModel):
 
-    def __init__(
-        self,
-        user_query: str
-    ):
-        self.user_query = user_query
+    # Runtime
+    user_id: Optional[str] = None
+    db: Any = None
 
-        # planning
-        self.plan = None
-        self.plan_history = []
+    # Current user message
+    user_query: str
 
-        # human approval
-        self.approval_required = False
-        self.approval_status = "pending"
+    # Conversation
+    conversation_id: Optional[str] = None
 
-        # feedback
-        self.user_feedback = None
+    conversation_history: list[dict] = (
+        Field(default_factory=list)
+    )
 
-        # execution
-        self.tool_output = None
+    # Planner
+    plan: Optional[dict] = None
+    workflow: list[dict] = (
+        Field(default_factory=list)
+    )
 
-        # validation
-        self.validation_result = None
+    # Clarification Flow
+    pending_action: Optional[str] = None
 
-        # response
-        self.final_response = None
+    pending_question: Optional[str] = None
+
+    missing_fields: list[str] = (
+        Field(default_factory=list)
+    )
+
+    # Event Selection
+    candidate_events: list[dict] = (
+        Field(default_factory=list)
+    )
+
+    selected_event: Optional[dict] = None
+
+    # Workflow Execution
+    current_workflow_step: int = 0
+
+    step_results: dict = (
+        Field(default_factory=dict)
+    )
+
+    step_status: dict = (
+        Field(default_factory=dict)
+    )
+
+    # Approval
+    approval_required: bool = False
+
+    approval_source: Optional[str] = None
+
+    approval_status: Optional[str] = None
+
+    approval_message: Optional[str] = None
+
+    # Replanning
+    plan_history: list[dict] = (
+        Field(default_factory=list)
+    )
+
+    user_feedback: Optional[str] = None
+
+    # Validation
+    validation_result: Optional[dict] = None
+
+    # Retry
+    retry_count: int = 0
+    max_retries: int = 3
+
+    # Error
+    error: Optional[str] = None
+
+    # Response
+    final_response: Optional[str] = None
+
+    # Graph Routing
+    current_step: str = "planner"
+
+    next_step: Optional[str] = None
