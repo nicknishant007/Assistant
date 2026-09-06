@@ -114,33 +114,22 @@ def choose_best_slot_from_free_slots(
             end_time
         )
 
-        if (
-            end_dt - start_dt
-            >= required_duration
-        ):
+        if end_dt - start_dt >= required_duration:
 
-            return (
-                start_time,
-                (
-                    start_dt
-                    + required_duration
+            return {
+                "start_time": start_time,
+                "end_time": (
+                    start_dt + required_duration
                 ).time()
-            )
+            }
 
     return None
 ##Choose best slot
 def choose_best_slot(
-    db,
-    user_id: str,
+    free_slots,
     date,
     duration_minutes: int
 ):
-
-    free_slots = find_free_slots(
-        db=db,
-        user_id=user_id,
-        date=date
-    )
 
     return choose_best_slot_from_free_slots(
         free_slots=free_slots,
@@ -148,38 +137,21 @@ def choose_best_slot(
         duration_minutes=duration_minutes
     )
 
-##Schedule event
-def schedule_task(
+# SCHEDULE A EVENT (EVENT_TITLE, DATE, DURATION GIVEN)
+def schedule_task_fixed_time(
     db,
-    user_id: str,
-    title: str,
-    date,
-    duration_minutes: int
+    user_id:str,
+    title:str,
+    start_datetime,
+    duration_minutes:int
 ):
-
-    slot = choose_best_slot(
-        db=db,
-        user_id=user_id,
-        date=date,
-        duration_minutes=duration_minutes
+    
+    end_datetime = (
+        start_datetime +
+        timedelta(minutes=duration_minutes)
     )
 
-    if not slot:
-        return None
-
-    start_time, end_time = slot
-
-    start_datetime = datetime.combine(
-        date.date(),
-        start_time
-    )
-
-    end_datetime = datetime.combine(
-        date.date(),
-        end_time
-    )
-
-    created_event = create_event(
+    return create_event(
         db=db,
         user_id=user_id,
         title=title,
@@ -187,7 +159,22 @@ def schedule_task(
         end_time=end_datetime.isoformat()
     )
 
-    return created_event
+##Schedule event(time not given)
+def schedule_task_auto(
+    db,
+    user_id:str,
+    title:str,
+    start_datetime,
+    end_datetime
+):
+
+    return create_event(
+        db=db,
+        user_id=user_id,
+        title=title,
+        start_time=start_datetime.isoformat(),
+        end_time=end_datetime.isoformat()
+    )
 
 
 #tomorrow full next day check we have also max day limit
@@ -270,9 +257,60 @@ def find_next_available_day(
             }
 
     return None
+#Reschedule Task(date+time)
+def reschedule_task_fixed(
+    db,
+    user_id:str,
+    event_id:str,
+    title:str,
+    start_datetime,
+    end_datetime
+):
+    return update_event(
+        db=db,
+        user_id=user_id,
+        event_id=event_id,
+        title=title,
+        start_time=start_datetime.isoformat(),
+        end_time=end_datetime.isoformat()
+    )
 
+#Reschedule Task(day only)
+def reschedule_task_day(
+    db,
+    user_id:str,
+    event_id:str,
+    title:str,
+    start_datetime,
+    end_datetime
+):
+    return update_event(
+        db=db,
+        user_id=user_id,
+        event_id=event_id,
+        title=title,
+        start_time=start_datetime.isoformat(),
+        end_time=end_datetime.isoformat()
+    )
+
+def reschedule_task_next_available(
+    db,
+    user_id:str,
+    event_id:str,
+    title:str,
+    start_datetime,
+    end_datetime
+):
+    return update_event(
+        db=db,
+        user_id=user_id,
+        event_id=event_id,
+        title=title,
+        start_time=start_datetime.isoformat(),
+        end_time=end_datetime.isoformat()
+    )
 ##Reschedule Task
-def reschedule_task(
+"""def reschedule_task(
     db,
     user_id: str,
     event_name: str,
@@ -332,36 +370,21 @@ def reschedule_task(
         end_time=end_datetime.isoformat()
     )
 
-    return updated_event
+    return updated_event"""
 
 # DELETE EVENT
 def delete_task(
     db,
     user_id: str,
-    title: str
+    event_id: str
 ):
-
-    matching_events = find_event_by_title(
-        db=db,
-        user_id=user_id,
-        title=title
-    )
-
-    if not matching_events:
-        return {
-            "success": False,
-            "message": f"No event found with title '{title}'"
-        }
-
-    event = matching_events[0]
-
     delete_event(
         db=db,
         user_id=user_id,
-        event_id=event["id"]
+        event_id=event_id
     )
 
     return {
         "success": True,
-        "message": f"Event '{title}' deleted successfully"
+        "message": "Event deleted successfully"
     }

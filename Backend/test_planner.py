@@ -2,28 +2,30 @@ from agent.planner_agent import planner_agent
 from agent.state import AgentState
 
 
-class Message:
-
-    def __init__(self, role, content):
-        self.role = role
-        self.content = content
-
-
 state = AgentState(
-    user_query="Reschedule my agent testing meeting to today 7:30 PM",
+    user_query="Can u please reschedule my agent testing event and increase its duration by 2 hours and shift it to the best spot in any of the upcoming 3 day "
+    
 )
-
-messages = [
-    Message(
-        role="user",
-        content="Reschedule my agent testing meeting to today 7:30 PM"
-    )
-]
 
 result = planner_agent(
-    state=state,
-    messages=messages
+    state=state
 )
 
-print(result.plan)
+print("\n========== RESULT ==========")
+
+print("NEXT STEP:")
 print(result.next_step)
+
+print("\nAPPROVAL REQUIRED:")
+print(result.approval_required)
+
+print("\nAPPROVAL MESSAGE:")
+print(result.approval_message)
+
+print("\nPLAN:")
+print(result.plan)
+
+print("\nWORKFLOW:")
+print(result.workflow)
+
+print("============================\n")

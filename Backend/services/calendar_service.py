@@ -222,6 +222,7 @@ def get_events_range(
 
 from datetime import datetime
 
+
 def find_event_by_title(
     db,
     user_id: str,
@@ -318,33 +319,41 @@ def find_event_by_title(
                 {}
             )
 
-            event_datetime = (
+            end_info = event.get(
+                "end",
+                {}
+            )
+
+            start_datetime = (
                 start_info.get("dateTime")
                 or start_info.get("date")
             )
 
-            if event_datetime:
+            end_datetime = (
+                end_info.get("dateTime")
+                or end_info.get("date")
+            )
 
-                event_dt = (
-                    datetime.fromisoformat(
-                        event_datetime.replace(
-                            "Z",
-                            "+00:00"
-                        )
+            duration_minutes = None
+
+            if start_datetime:
+
+                start_dt = datetime.fromisoformat(
+                    start_datetime.replace(
+                        "Z",
+                        "+00:00"
                     )
                 )
 
                 event_date = (
-                    event_dt.date()
+                    start_dt.date()
                     .isoformat()
                 )
 
                 event_day = (
-                    event_dt.strftime("%A")
+                    start_dt.strftime("%A")
                     .lower()
                 )
-
-                # Exact Date Match
 
                 if (
                     resolved_date
@@ -352,16 +361,29 @@ def find_event_by_title(
                 ):
                     date_score = 100
 
-                # Weekday Match
-
                 if (
                     resolved_day
                     and event_day == resolved_day
                 ):
                     day_score = 100
 
+                if end_datetime:
+
+                    end_dt = datetime.fromisoformat(
+                        end_datetime.replace(
+                            "Z",
+                            "+00:00"
+                        )
+                    )
+
+                    duration_minutes = int(
+                        (
+                            end_dt - start_dt
+                        ).total_seconds() / 60
+                    )
+
         except Exception:
-            pass
+            duration_minutes = None
 
         # -------------------
         # FINAL SCORE
@@ -382,6 +404,7 @@ def find_event_by_title(
                 "title": event.get("summary"),
                 "start": event.get("start"),
                 "end": event.get("end"),
+                "duration_minutes": duration_minutes,
                 "score": round(score, 2)
             })
 

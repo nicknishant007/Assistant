@@ -2,13 +2,14 @@ from sqlalchemy.orm import Session
 
 from schemas.chat import ChatResponse
 
+from agent.state import AgentState
+from agent.planner_agent import planner_agent
+
 from services.conversation_service import (
     create_conversation,
     add_message,
-    get_messages
+    get_recent_messages
 )
-
-from agent.planner_agent import planner_agent
 
 
 def chat_service(
@@ -18,7 +19,10 @@ def chat_service(
     conversation_id: str | None = None
 ):
 
-    # Create conversation if needed
+    # --------------------------------------------------
+    # Create Conversation
+    # --------------------------------------------------
+
     if not conversation_id:
 
         conversation = create_conversation(
@@ -29,7 +33,10 @@ def chat_service(
 
         conversation_id = conversation.id
 
-    # Store user message
+    # --------------------------------------------------
+    # Save User Message
+    # --------------------------------------------------
+
     add_message(
         db=db,
         conversation_id=conversation_id,
@@ -37,28 +44,84 @@ def chat_service(
         content=message
     )
 
-    # Fetch history
-    messages = get_messages(
+    # --------------------------------------------------
+    # Fetch Last Messages
+    # --------------------------------------------------
+
+    messages = get_recent_messages(
         db=db,
-        conversation_id=conversation_id
+        conversation_id=conversation_id,
+        limit=50
     )
 
+    # --------------------------------------------------
+    # Build Agent State
+    # --------------------------------------------------
+
+    state = AgentState(
+        user_id=user_id,
+        conversation_id=conversation_id,
+        user_query=message
+    )
+
+    state.conversation_history = [
+        {
+            "role": msg.role,
+            "content": msg.content
+        }
+        for msg in messages
+    ]
+
+    # --------------------------------------------------
     # Planner
-    planner_result = planner_agent(
-        messages
+    # --------------------------------------------------
+
+    state = planner_agent(
+        state=state
     )
 
-    assistant_message = (
-        planner_result["message"]
-    )
+    # --------------------------------------------------
+    # Extract Response
+    # --------------------------------------------------
 
-    # Store assistant response
+    if state.next_step == "ask_user":
+
+        assistant_message = (
+            state.pending_question
+        )
+
+    elif state.next_step == "approval":
+
+        assistant_message = (
+            state.approval_message
+        )
+
+    elif state.final_response:
+
+        assistant_message = (
+            state.final_response
+        )
+
+    else:
+
+        assistant_message = (
+            "Unable to process request."
+        )
+
+    # --------------------------------------------------
+    # Save Assistant Message
+    # --------------------------------------------------
+
     add_message(
         db=db,
         conversation_id=conversation_id,
         role="assistant",
         content=assistant_message
     )
+
+    # --------------------------------------------------
+    # Return Response
+    # --------------------------------------------------
 
     return ChatResponse(
         conversation_id=conversation_id,

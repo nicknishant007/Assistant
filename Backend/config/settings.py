@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     GOOGLE_REDIRECT_URI: str
     SESSION_SECRET_KEY: str
     GOOGLE_API_KEY: str
+    MISTRAL_API_KEY: str
+    MISTRAL_MODEL: str="mistral-small-latest"
 
     model_config = SettingsConfigDict(
         env_file=".env",

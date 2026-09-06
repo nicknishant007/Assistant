@@ -53,19 +53,28 @@ def add_message(
     return message
 
 
-def get_messages(
+def get_recent_messages(
     db,
-    conversation_id: str
+    conversation_id: str,
+    limit: int = 55
 ):
 
-    return (
+    messages=(
         db.query(ConversationMessage)
-        .filter(
-            ConversationMessage.conversation_id
-            == conversation_id
-        )
-        .order_by(
-            ConversationMessage.created_at.asc()
-        )
+        .filter(ConversationMessage.conversation_id== conversation_id)
+        .order_by(ConversationMessage.created_at.desc())
+        .limit(limit)
         .all()
     )
+
+    messages.reverse()
+    return messages
+
+def get_messages(
+        db,
+        converstion_id: str
+):
+    messages=(db.query(ConversationMessage)
+              .filter(ConversationMessage.conversation_id==converstion_id)
+              .order_by(ConversationMessage.created_at.asc()).all())
+    return messages
