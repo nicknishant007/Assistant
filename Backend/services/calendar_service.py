@@ -1,5 +1,5 @@
 from email import message
-
+from datetime import timezone
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
@@ -196,11 +196,22 @@ def get_day_events(
     return events.get("items", [])
 
 ##GET 7 DAY EVENT
+
 def get_events_range(
     service,
     start_date: datetime,
     end_date: datetime
 ):
+
+    if start_date.tzinfo is None:
+        start_date = start_date.replace(
+            tzinfo=timezone.utc
+        )
+
+    if end_date.tzinfo is None:
+        end_date = end_date.replace(
+            tzinfo=timezone.utc
+        )
 
     events = (
         service.events()

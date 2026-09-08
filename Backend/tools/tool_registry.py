@@ -259,6 +259,7 @@ TOOLS = {
         selected start and end datetime.
         This tool does not search for free slots.
         This tool only creates the event.
+        You have to find a free slot first using find_free_slots
         """,
 
     "use_when":

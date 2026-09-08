@@ -1,7 +1,9 @@
 import json
 from datetime import datetime
 from zoneinfo import ZoneInfo
+
 from langchain.chat_models import init_chat_model
+
 from config.settings import settings
 from agent.state import AgentState
 from agent.prompt.planner_prompt import PLANNER_PROMPT
@@ -17,17 +19,13 @@ llm = init_chat_model(
     max_retries=3
 )
 
+
 def build_chat_history(history):
 
-    lines = []
-
-    for msg in history:
-
-        lines.append(
-            f"{msg['role']}: {msg['content']}"
-        )
-
-    return "\n".join(lines)
+    return "\n".join(
+        f"{msg['role']}: {msg['content']}"
+        for msg in history
+    )
 
 
 def planner_agent(
@@ -38,19 +36,15 @@ def planner_agent(
         ZoneInfo("Asia/Kolkata")
     )
 
-    conversation_history = (
-        build_chat_history(
-            state.conversation_history
-        )
-    )
-
     prompt = PLANNER_PROMPT.format(
         tool_descriptions=get_tool_descriptions(),
         plan_history=state.plan_history,
-        user_feedback=state.user_feedback,
+        user_feedback=state.user_feedback or "",
         current_datetime=current_datetime.isoformat(),
         timezone="Asia/Kolkata",
-        conversation_history=conversation_history
+        conversation_history=build_chat_history(
+            state.conversation_history
+        )
     )
 
     response = llm.invoke(
@@ -60,14 +54,9 @@ def planner_agent(
         ]
     )
 
-    print("\n========== RAW LLM RESPONSE ==========")
-    print(response.content)
-    print("======================================\n")
-
     content = response.content.strip()
 
     if content.startswith("```json"):
-
         content = (
             content
             .replace("```json", "")
@@ -76,65 +65,59 @@ def planner_agent(
         )
 
     try:
-
-        plan = json.loads(content)
+        result = json.loads(content)
 
     except Exception as e:
 
-        print("\n========== JSON PARSE ERROR ==========")
+        state.error = (
+            f"Planner JSON Parse Error: {e}"
+        )
+
+        state.next_step = "error"
+
+        print("\nPlanner Parse Error:")
         print(content)
-        print("======================================\n")
 
-        raise e
+        return state
 
-    if plan.get("action") == "ask_user":
+    # -------------------------
+    # ASK USER FLOW
+    # -------------------------
+
+    if result.get("action") == "ask_user":
 
         state.pending_action = "ask_user"
 
         state.pending_question = (
-            plan["message"]
+            result["message"]
         )
+
+        state.current_step = "planner"
 
         state.next_step = "ask_user"
 
         return state
 
-    state.plan = plan
+    # -------------------------
+    # WORKFLOW FLOW
+    # -------------------------
 
-    state.workflow = plan.get(
+    state.plan = result
+
+    state.workflow = result.get(
         "workflow",
         []
     )
 
-    state.approval_required = plan.get(
+    state.approval_required = result.get(
         "approval_required",
         False
     )
 
-    if state.approval_required:
+    state.current_workflow_step = 0
 
-        state.approval_source = "planner"
+    state.current_step = "planner"
 
-        state.approval_message = (
-            f"Goal: {plan['goal']}\n\n"
-            f"Approve this plan?"
-        )
-
-        state.next_step = "approval"
-
-    else:
-
-        state.next_step = "executor"
-
-    print("\n========== PARSED PLAN ==========")
-
-    print(
-        json.dumps(
-            plan,
-            indent=4
-        )
-    )
-
-    print("=================================\n")
+    state.next_step = "executor"
 
     return state

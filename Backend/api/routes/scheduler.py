@@ -11,8 +11,8 @@ from schemas.scheduler import (
 )
 
 from services.scheduler_service import (
-    schedule_task,
-    reschedule_task,
+    schedule_task_fixed_time,
+    reschedule_task_day,
     find_free_slots,
     find_next_available_day
 )
@@ -84,7 +84,7 @@ def schedule_new_task(
     current_user=Depends(get_current_user)
 ):
 
-    event = schedule_task(
+    event = schedule_task_fixed_time(
         db=db,
         user_id=current_user.id,
         title=request.title,
@@ -108,7 +108,7 @@ def reschedule_existing_task(
     current_user=Depends(get_current_user)
 ):
 
-    event = reschedule_task(
+    event = reschedule_task_day(
         db=db,
         user_id=current_user.id,
         event_name=request.event_name,

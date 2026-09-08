@@ -3,7 +3,8 @@ from agent.state import AgentState
 
 
 state = AgentState(
-    user_query="Can u please reschedule my agent testing event and increase its duration by 2 hours and shift it to the best spot in any of the upcoming 3 day "
+    user_query="Find which event is scheduled at 4 pm today "
+     
     
 )
 

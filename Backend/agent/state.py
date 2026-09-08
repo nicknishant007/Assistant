@@ -4,43 +4,43 @@ from typing import Optional, Any
 
 class AgentState(BaseModel):
 
-    # Runtime
+    # ==================================================
+    # USER / SESSION
+    # ==================================================
+
     user_id: Optional[str] = None
     db: Any = None
 
-    # Current user message
-    user_query: str
-
-    # Conversation
     conversation_id: Optional[str] = None
+
+    user_query: str
 
     conversation_history: list[dict] = (
         Field(default_factory=list)
     )
 
-    # Planner
+    # ==================================================
+    # PLANNER
+    # ==================================================
+
+    goal: Optional[str] = None
+
     plan: Optional[dict] = None
+
     workflow: list[dict] = (
         Field(default_factory=list)
     )
 
-    # Clarification Flow
-    pending_action: Optional[str] = None
-
-    pending_question: Optional[str] = None
-
-    missing_fields: list[str] = (
+    plan_history: list[dict] = (
         Field(default_factory=list)
     )
 
-    # Event Selection
-    candidate_events: list[dict] = (
-        Field(default_factory=list)
-    )
+    user_feedback: Optional[str] = None
 
-    selected_event: Optional[dict] = None
+    # ==================================================
+    # EXECUTION
+    # ==================================================
 
-    # Workflow Execution
     current_workflow_step: int = 0
 
     step_results: dict = (
@@ -51,36 +51,109 @@ class AgentState(BaseModel):
         Field(default_factory=dict)
     )
 
-    # Approval
-    approval_required: bool = False
+    # ==================================================
+# EXECUTOR ROUTING
+# ==================================================
 
-    approval_source: Optional[str] = None
+    next_step: Optional[str] = None
+
+# ==================================================
+# APPROVAL FLAGS
+# ==================================================
+
+    approval_required: bool = False
 
     approval_status: Optional[str] = None
 
+    approval_source: Optional[str] = None
+
     approval_message: Optional[str] = None
 
-    # Replanning
-    plan_history: list[dict] = (
+    # ==================================================
+    # EVENT SELECTION
+    # ==================================================
+
+    candidate_events: list[dict] = (
         Field(default_factory=list)
     )
 
-    user_feedback: Optional[str] = None
+    selected_event: Optional[dict] = None
 
-    # Validation
+    # ==================================================
+    # SLOT SELECTION
+    # ==================================================
+
+    candidate_slots: list[dict] = (
+        Field(default_factory=list)
+    )
+
+    selected_slot: Optional[dict] = None
+
+    # ==================================================
+    # APPROVAL
+    # ==================================================
+
+    approval: dict = (
+        Field(default_factory=lambda: {
+            "pending": False,
+            "type": None,
+            "step_id": None,
+            "message": None,
+            "data": None,
+            "status": None
+        })
+    )
+
+    # approval types:
+    #
+    # event_selection
+    # slot_selection
+    # delete_confirmation
+    # update_confirmation
+    # schedule_confirmation
+
+    # ==================================================
+    # CLARIFICATION
+    # ==================================================
+
+    pending_action: Optional[str] = None
+
+    pending_question: Optional[str] = None
+
+    missing_fields: list[str] = (
+        Field(default_factory=list)
+    )
+
+    # ==================================================
+    # VALIDATION
+    # ==================================================
+
     validation_result: Optional[dict] = None
 
-    # Retry
+    # ==================================================
+    # RETRIES
+    # ==================================================
+
     retry_count: int = 0
+
     max_retries: int = 3
 
-    # Error
+    # ==================================================
+    # ERROR
+    # ==================================================
+
     error: Optional[str] = None
 
-    # Response
+    # ==================================================
+    # RESPONSE
+    # ==================================================
+
     final_response: Optional[str] = None
 
-    # Graph Routing
-    current_step: str = "planner"
+    # ==================================================
+    # GRAPH ROUTING
+    # ==================================================
 
-    next_step: Optional[str] = None
+    current_agent: str = "planner"
+
+    next_agent: Optional[str] = None

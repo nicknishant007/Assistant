@@ -19,14 +19,14 @@ def schedule_task_fixed_tool(
     user_id,
     title,
     start_datetime,
-    end_datetime
+    duration_minutes
 ):
     return schedule_task_fixed_time(
         db=db,
         user_id=user_id,
         title=title,
         start_datetime=start_datetime,
-        end_datetime=end_datetime
+        duration_minutes=duration_minutes
     )
 
 
@@ -67,14 +67,14 @@ def free_slots_tool(
 def choose_best_slot_tool(
     free_slots,
     date,
-    duration_minutes
+    duration_minutes,
+    **kwargs
 ):
     return choose_best_slot(
         free_slots=free_slots,
         date=date,
         duration_minutes=duration_minutes
     )
-
 
 # FIND NEXT AVAILABLE DAY
 
