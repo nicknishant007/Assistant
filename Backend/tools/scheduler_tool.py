@@ -2,9 +2,7 @@ from services.scheduler_service import (
     schedule_task_fixed_time,
     schedule_task_auto,
 
-    reschedule_task_fixed,
-    reschedule_task_day,
-    reschedule_task_next_available,
+    reschedule_event,
 
     find_free_slots,
     choose_best_slot,
@@ -94,63 +92,34 @@ def next_available_day_tool(
     )
 
 
-# RESCHEDULE FIXED
+# RESCHEDULE EVENT
 
-def reschedule_task_fixed_tool(
+
+def reschedule_event_tool(
     db,
     user_id,
     event_id,
     title,
-    start_datetime,
-    end_datetime
+
+    start_datetime=None,
+    end_datetime=None,
+
+    date=None,
+    start_time=None,
+    end_time=None
 ):
-    return reschedule_task_fixed(
+    return reschedule_event(
         db=db,
         user_id=user_id,
         event_id=event_id,
         title=title,
+
         start_datetime=start_datetime,
-        end_datetime=end_datetime
-    )
+        end_datetime=end_datetime,
 
-
-# RESCHEDULE DAY
-
-def reschedule_task_day_tool(
-    db,
-    user_id,
-    event_id,
-    title,
-    start_datetime,
-    end_datetime
-):
-    return reschedule_task_day(
-        db=db,
-        user_id=user_id,
-        event_id=event_id,
-        title=title,
-        start_datetime=start_datetime,
-        end_datetime=end_datetime
-    )
-
-
-# RESCHEDULE NEXT AVAILABLE
-
-def reschedule_task_next_available_tool(
-    db,
-    user_id,
-    event_id,
-    title,
-    start_datetime,
-    end_datetime
-):
-    return reschedule_task_next_available(
-        db=db,
-        user_id=user_id,
-        event_id=event_id,
-        title=title,
-        start_datetime=start_datetime,
-        end_datetime=end_datetime
+        date=date,
+        start_time=start_time,
+        end_time=end_time
     )
 
 

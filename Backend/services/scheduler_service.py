@@ -4,6 +4,21 @@ from services.preference_service import (get_user_preferences)
 from services.calendar_service import (build_calendar_service,get_day_events,create_event,get_events_range
                                        ,update_event,delete_event)
 
+#Helper
+
+def to_iso(value):
+
+    if isinstance(value, str):
+        return value
+
+    if isinstance(value, datetime):
+        return value.isoformat()
+
+    raise ValueError(
+        f"Unsupported datetime type: {type(value)}"
+    )
+
+
 #helper find slot
 def find_free_slots_from_events(
     events,
@@ -102,25 +117,39 @@ def choose_best_slot_from_free_slots(
         minutes=duration_minutes
     )
 
+    actual_date = (
+        date.date()
+        if isinstance(date, datetime)
+        else date
+    )
+
     for start_time, end_time in free_slots:
 
         start_dt = datetime.combine(
-            date.date(),
+            actual_date,
             start_time
         )
 
         end_dt = datetime.combine(
-            date.date(),
+            actual_date,
             end_time
         )
 
         if end_dt - start_dt >= required_duration:
 
+            final_end_dt = (
+                start_dt + required_duration
+            )
+
             return {
                 "start_time": start_time,
-                "end_time": (
-                    start_dt + required_duration
-                ).time()
+                "end_time": final_end_dt.time(),
+
+                "start_datetime":
+                    start_dt.isoformat(),
+
+                "end_datetime":
+                    final_end_dt.isoformat()
             }
 
     return None
@@ -130,7 +159,6 @@ def choose_best_slot(
     date,
     duration_minutes: int
 ):
-    duration_minutes=int(duration_minutes)
     return choose_best_slot_from_free_slots(
         free_slots=free_slots,
         date=date,
@@ -155,8 +183,8 @@ def schedule_task_fixed_time(
         db=db,
         user_id=user_id,
         title=title,
-        start_time=start_datetime.isoformat(),
-        end_time=end_datetime.isoformat()
+        start_time=to_iso(start_datetime),
+        end_time=to_iso(end_datetime)
     )
 
 ##Schedule event(time not given)
@@ -172,8 +200,8 @@ def schedule_task_auto(
         db=db,
         user_id=user_id,
         title=title,
-        start_time=start_datetime.isoformat(),
-        end_time=end_datetime.isoformat()
+        start_time=to_iso(start_datetime),
+        end_time=to_iso(end_datetime)
     )
 
 
@@ -257,120 +285,101 @@ def find_next_available_day(
             }
 
     return None
-#Reschedule Task(date+time)
-def reschedule_task_fixed(
-    db,
-    user_id:str,
-    event_id:str,
-    title:str,
-    start_datetime,
-    end_datetime
-):
-    return update_event(
-        db=db,
-        user_id=user_id,
-        event_id=event_id,
-        title=title,
-        start_time=start_datetime.isoformat(),
-        end_time=end_datetime.isoformat()
-    )
 
-#Reschedule Task(day only)
-def reschedule_task_day(
-    db,
-    user_id:str,
-    event_id:str,
-    title:str,
-    start_datetime,
-    end_datetime
+#Date and Time Normalizer
+def normalize_datetimes(
+    start_datetime=None,
+    end_datetime=None,
+    date=None,
+    start_time=None,
+    end_time=None
 ):
-    return update_event(
-        db=db,
-        user_id=user_id,
-        event_id=event_id,
-        title=title,
-        start_time=start_datetime.isoformat(),
-        end_time=end_datetime.isoformat()
-    )
+    """
+    Supports either:
 
-def reschedule_task_next_available(
-    db,
-    user_id:str,
-    event_id:str,
-    title:str,
-    start_datetime,
-    end_datetime
-):
-    return update_event(
-        db=db,
-        user_id=user_id,
-        event_id=event_id,
-        title=title,
-        start_time=start_datetime.isoformat(),
-        end_time=end_datetime.isoformat()
-    )
-##Reschedule Task
-"""def reschedule_task(
-    db,
-    user_id: str,
-    event_name: str,
-    start_date,
-    duration_minutes: int
-):
+    1.
+    start_datetime + end_datetime
 
-    matching_events = find_event_by_title(
-        db=db,
-        user_id=user_id,
-        title=event_name
-    )
+    OR
 
-    if not matching_events:
-        raise Exception(
-            "Event not found"
+    2.
+    date + start_time + end_time
+    """
+
+    if start_datetime and end_datetime:
+        return (
+            start_datetime,
+            end_datetime
         )
 
-    event = matching_events[0]
+    if date and start_time and end_time:
 
-    event_id = event["id"]
+        start_datetime = (
+            f"{date}T{start_time}"
+        )
 
-    slot_data = find_next_available_day(
-        db=db,
-        user_id=user_id,
-        start_date=start_date,
-        duration_minutes=duration_minutes
+        end_datetime = (
+            f"{date}T{end_time}"
+        )
+
+        return (
+            start_datetime,
+            end_datetime
+        )
+
+    raise ValueError(
+        "Provide either "
+        "(start_datetime,end_datetime) "
+        "or "
+        "(date,start_time,end_time)"
     )
 
-    if not slot_data:
-        return None
+#Reschedule Task
+def reschedule_event(
+    db,
+    user_id: str,
+    event_id: str,
+    title: str,
 
-    slot_start, slot_end = (
-        slot_data["slot"]
+    start_datetime=None,
+    end_datetime=None,
+
+    date=None,
+    start_time=None,
+    end_time=None
+):
+    """
+    Reschedule an existing event.
+
+    Supported formats:
+
+    1.
+    start_datetime + end_datetime
+
+    2.
+    date + start_time + end_time
+    """
+
+    (
+        start_datetime,
+        end_datetime
+    ) = normalize_datetimes(
+        start_datetime=start_datetime,
+        end_datetime=end_datetime,
+        date=date,
+        start_time=start_time,
+        end_time=end_time
     )
 
-    event_date = (
-        slot_data["date"]
-    )
-
-    start_datetime = datetime.combine(
-        event_date,
-        slot_start
-    )
-
-    end_datetime = datetime.combine(
-        event_date,
-        slot_end
-    )
-
-    updated_event = update_event(
+    return update_event(
         db=db,
         user_id=user_id,
         event_id=event_id,
-        title=event["summary"],
-        start_time=start_datetime.isoformat(),
-        end_time=end_datetime.isoformat()
+        title=title,
+        start_time=start_datetime,
+        end_time=end_datetime
     )
 
-    return updated_event"""
 
 # DELETE EVENT
 def delete_task(

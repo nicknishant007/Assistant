@@ -20,54 +20,45 @@ def test_real_executor():
 
         workflow=[
 
-            {
-                "id": "step_1",
-                "tool": "find_event_by_title",
-                "params": {
-                    "title": "Executor Schedule Test"
-                }
-            },
+            
+    {
+        "id": "step_1",
+        "tool": "find_event_by_title",
+        "params": {
+            "title": "Executor Schedule Test"
+        }
+    },
 
-            {
-                "id": "step_2",
-                "tool": "find_free_slots",
-                "params": {
-                    "date": datetime(2026, 10, 1)
-                }
-            },
+    {
+        "id": "step_2",
+        "tool": "find_next_available_day",
+        "params": {
+            "start_date": datetime.now(),
+            "duration_minutes":
+                "{{step_1.best_match.duration_minutes}}"
+        }
+    },
 
-            {
-                "id": "step_3",
-                "tool": "choose_best_slot",
-                "params": {
-                    "free_slots":
-                        "{{step_2}}",
+    {
+        "id": "step_3",
+        "tool": "reschedule_task_next_available",
+        "params": {
+            "event_id":
+                "{{step_1.best_match.event_id}}",
 
-                    "date":
-                        datetime(2026, 10, 1),
+            "title":
+                "{{step_1.best_match.title}}",
 
-                    "duration_minutes":
-                        "{{step_1.best_match.duration_minutes}}"
-                }
-            },
+            "start_datetime":
+                "{{step_2.slot.start_datetime}}",
 
-            {
-                "id": "step_4",
-                "tool": "reschedule_task_day",
-                "params": {
+            "end_datetime":
+                "{{step_2.slot.end_datetime}}"
+        }
+    }
+]
 
-                    "event_id":
-                        "{{step_1.best_match.event_id}}",
-
-                    "start_datetime":
-                        "{{step_3.start_datetime}}",
-
-                    "end_datetime":
-                        "{{step_3.end_datetime}}"
-                }
-            }
-
-        ]
+        
     )
 
     while True:

@@ -6,9 +6,7 @@ from tools.calendar_tool import (
 from tools.scheduler_tool import (
     schedule_task_fixed_tool,
     schedule_task_auto_tool,
-    reschedule_task_fixed_tool,
-    reschedule_task_day_tool,
-    reschedule_task_next_available_tool,
+    reschedule_event_tool,
     choose_best_slot_tool,
     free_slots_tool,
     delete_task_tool,
@@ -63,32 +61,65 @@ TOOLS = {
     ]
 },
 "find_event_by_title": {
+
     "function": find_event_by_title_tool,
 
     "description":
         """
-        Search calendar events using an event title
-        and return the most likely matching event
-        along with alternative matches.
+        Search calendar events using a title and return
+        the most relevant matching event together with
+        alternative matches.
+
+        This tool is the primary event lookup tool.
+
+        It returns normalized event information including:
+
+        - event_id
+        - title
+        - date
+        - day
+        - start_datetime
+        - end_datetime
+        - start_time
+        - end_time
+        - duration_minutes
+
+        Use this tool whenever later workflow steps
+        require information about an existing event.
+
+        The returned event data should be reused instead
+        of manually reconstructing event information.
         """,
 
     "use_when":
         """
         Use when:
+
         - User mentions an event name.
         - User wants to update an event.
         - User wants to reschedule an event.
         - User wants to delete an event.
-        - Event details are required for later workflow steps.
-        - Event duration is required for later workflow steps.
+        - User refers to:
+            'that meeting'
+            'that event'
+            'move it'
+            'delete it'
+            'reschedule it'
+
+        - Event duration is needed.
+        - Event date is needed.
+        - Event start/end time is needed.
+        - Event start/end datetime is needed.
+        - Event metadata is required for later workflow steps.
         """,
 
     "prerequisite_tools": [],
 
     "input_parameters": {
+
         "title": "str",
-        "date": "str (optional)",
-        "day": "str (optional)"
+        "date": "str (optional, ISO date)",
+        "day":"str (optional, monday-sunday)"
     },
 
     "output": {
@@ -96,20 +127,30 @@ TOOLS = {
         "found": "bool",
 
         "best_match": {
+
             "event_id": "str",
             "title": "str",
-            "start_time": "datetime",
-            "end_time": "datetime",
+            "date": "date",
+            "day": "str",
+            "start_datetime": "datetime",
+            "end_datetime": "datetime",
+            "start_time": "time",
+            "end_time": "time",
             "duration_minutes": "int",
             "score": "float"
         },
 
         "alternatives": [
             {
+
                 "event_id": "str",
                 "title": "str",
-                "start_time": "datetime",
-                "end_time": "datetime",
+                "date": "date",
+                "day": "str",
+                "start_datetime": "datetime",
+                "end_datetime": "datetime",
+                "start_time": "time",
+                "end_time": "time",
                 "duration_minutes": "int",
                 "score": "float"
             }
@@ -121,20 +162,30 @@ TOOLS = {
         "found": True,
 
         "best_match": {
+
             "event_id": "abc123",
             "title": "Team Sync",
-            "start_time": "2026-09-10T10:00:00",
-            "end_time": "2026-09-10T11:00:00",
+            "date": "2026-09-10",
+            "day": "thursday",
+            "start_datetime": "2026-09-10T10:00:00+05:30",
+            "end_datetime":"2026-09-10T11:00:00+05:30",
+            "start_time": "10:00",
+            "end_time": "11:00",
             "duration_minutes": 60,
             "score": 100
         },
 
         "alternatives": [
             {
+
                 "event_id": "xyz456",
                 "title": "Team Sync Weekly",
-                "start_time": "2026-09-12T14:00:00",
-                "end_time": "2026-09-12T15:00:00",
+                "date": "2026-09-12",
+                "day": "saturday",
+                "start_datetime":"2026-09-12T14:00:00+05:30",
+                "end_datetime":"2026-09-12T15:00:00+05:30",
+                "start_time": "14:00",
+                "end_time": "15:00",
                 "duration_minutes": 60,
                 "score": 80
             }
@@ -229,7 +280,10 @@ TOOLS = {
 
     "output": {
         "start_time": "time",
-        "end_time": "time"
+        "end_time": "time",
+
+        "start_datetime": "datetime",
+        "end_datetime": "datetime"
     },
 
     "prerequisites":
@@ -246,7 +300,13 @@ TOOLS = {
 
     "example_output": {
         "start_time": "09:00",
-        "end_time": "12:00"
+        "end_time": "10:00",
+
+        "start_datetime":
+            "2026-09-20T09:00:00",
+
+        "end_datetime":
+            "2026-09-20T10:00:00"
     }
 }
 ,
@@ -354,9 +414,16 @@ TOOLS = {
 
     "description":
         """
-        Find the earliest future day that contains
-        a free slot large enough to accommodate
-        the requested duration.
+        Find the earliest future day containing a free slot
+        large enough for the requested duration.
+
+        Returns the selected slot including complete
+        start_datetime and end_datetime values.
+
+        Use these datetime values directly in scheduling
+        or rescheduling tools.
+
+        Do not manually construct datetime strings.
         """,
 
     "use_when":
@@ -379,92 +446,150 @@ TOOLS = {
 
     "output": {
         "date": "date",
+
         "slot": {
             "start_time": "time",
-            "end_time": "time"
+            "end_time": "time",
+
+            "start_datetime": "datetime",
+            "end_datetime": "datetime"
         }
     },
 
     "example_output": {
         "date": "2026-09-10",
+
         "slot": {
             "start_time": "10:00",
-            "end_time": "11:30"
+            "end_time": "11:30",
+
+            "start_datetime": "2026-09-10T10:00:00+05:30",
+            "end_datetime": "2026-09-10T11:30:00+05:30"
         }
     }
 },
-"reschedule_task_fixed": {
-    "function": reschedule_task_fixed_tool,
+"reschedule_event": {
 
-    "description":
-        "Move an existing event to an exact date and time.",
-
-    "prerequisite_tools": [
-        "find_event_by_title"
-    ],
-
-    "input_parameters": {
-        "event_id": "str",
-        "title": "str",
-        "start_datetime": "datetime",
-        "end_datetime": "datetime"
-    },
-
-    "output": {
-        "updated_event": "calendar_event"
-    }
-},
-"reschedule_task_day": {
-    "function": reschedule_task_day_tool,
+    "function": reschedule_event_tool,
 
     "description":
         """
-        Move an event to a specific day using a slot
-        selected by previous workflow steps.
+        Reschedule an existing calendar event.
+
+        This is the primary tool for all event
+        rescheduling operations.
+
+        The tool updates an existing event's
+        schedule while preserving all event
+        information that is not explicitly changed.
+
+        Supports:
+
+        - Moving an event to a new date.
+        - Moving an event to a new time.
+        - Moving an event to a new date and time.
+        - Moving an event while preserving the
+          original time.
+        - Moving an event while preserving the
+          original duration.
+        - Moving an event to a selected free slot.
+        - Moving an event to the next available slot.
+        - Rescheduling using exact datetime values.
+        - Rescheduling using date + start_time + end_time.
+
+        This tool only performs the final event update.
+
+        Any required scheduling information should be
+        obtained by previous workflow steps or provided
+        directly by the user.
         """,
 
-    "prerequisite_tools": [
-        "find_event_by_title",
-        "find_free_slots",
-        "choose_best_slot"
-    ],
+    "use_when":
+        """
+        Use when:
+
+        - User wants to reschedule an event.
+        - User wants to move an event.
+        - User wants to postpone an event.
+        - User wants to shift an event.
+        - User wants to change an event date.
+        - User wants to change an event time.
+        - User wants to move an event to another day.
+        - User wants to move an event to another time.
+        - User says:
+            * move event
+            * reschedule event
+            * postpone event
+            * shift event
+            * move to another day
+            * move to another time
+            * same time
+            * keep timing
+            * same schedule
+            * preserve duration
+            * next available slot
+
+        Required inputs:
+
+        - event_id
+        - title
+
+        Scheduling information may come from:
+
+        - user supplied datetime values
+        - find_free_slots
+        - choose_best_slot
+        - find_next_available_day
+        - previous workflow steps
+
+        This tool should be the final step of every
+        rescheduling workflow.
+        """,
+
+    "prerequisite_tools": [],
 
     "input_parameters": {
+
         "event_id": "str",
+
         "title": "str",
-        "start_datetime": "datetime",
-        "end_datetime": "datetime"
+
+        "start_datetime":
+            "ISO-8601 datetime (optional)",
+
+        "end_datetime":
+            "ISO-8601 datetime (optional)",
+
+        "date":
+            "YYYY-MM-DD (optional)",
+
+        "start_time":
+            "HH:MM:SS (optional)",
+
+        "end_time":
+            "HH:MM:SS (optional)"
     },
 
     "output": {
         "updated_event": "calendar_event"
-    }
-},
-"reschedule_task_next_available": {
-    "function": reschedule_task_next_available_tool,
-
-    "description":
-    """
-    Move an existing event to the earliest available
-    free slot found within the specified date range.
-    """,
-
-    "prerequisite_tools": [
-        "find_event_by_title",
-        "find_next_available_day"
-    ],
-
-    "input_parameters": {
-        "event_id": "str",
-        "title": "str",
-        "start_datetime": "datetime",
-        "end_datetime": "datetime"
     },
 
-    "output": {
-        "updated_event": "calendar_event"
+    "example_output": {
+
+        "updated_event": {
+
+            "event_id": "abc123",
+
+            "title": "Team Sync",
+
+            "start_datetime":
+                "2026-09-27T10:00:00+05:30",
+
+            "end_datetime":
+                "2026-09-27T11:00:00+05:30"
+        }
     }
-},
+,
 
 "delete_task": {
     "function": delete_task_tool,
@@ -494,6 +619,7 @@ TOOLS = {
     }
 }
     
+} 
 }
 
 def get_tool_descriptions():

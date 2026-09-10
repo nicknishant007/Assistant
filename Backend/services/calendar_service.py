@@ -1,5 +1,3 @@
-from email import message
-from datetime import timezone
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
@@ -54,7 +52,7 @@ def build_calendar_service(
 def get_events(
         db,
         user_id:str,
-        max_results:int=20):
+        max_results:int=100):
     service=build_calendar_service(
         db=db,
         user_id=user_id
@@ -84,7 +82,11 @@ def create_event(
         db=db,
         user_id=user_id
     )
+    if isinstance(start_time, datetime):
+        start_time = start_time.isoformat()
 
+    if isinstance(end_time, datetime):
+        end_time = end_time.isoformat()
     event = {
         "summary": title,
         "start": {
@@ -122,6 +124,11 @@ def update_event(
         db=db,
         user_id=user_id
     )
+    if isinstance(start_time, datetime):
+        start_time = start_time.isoformat()
+
+    if isinstance(end_time, datetime):
+        end_time = end_time.isoformat()
 
     event = {
         "summary": title,
@@ -231,8 +238,6 @@ def get_events_range(
 
 # FIND EVENT BY TITLE
 
-from datetime import datetime
-
 
 def find_event_by_title(
     db,
@@ -320,7 +325,7 @@ def find_event_by_title(
             title_score = overlap * 20
 
         # -------------------
-        # DATE / DAY SCORE
+        # EVENT DATA
         # -------------------
 
         try:
@@ -346,6 +351,10 @@ def find_event_by_title(
             )
 
             duration_minutes = None
+            start_time = None
+            end_time = None
+            event_date = None
+            event_day = None
 
             if start_datetime:
 
@@ -354,6 +363,10 @@ def find_event_by_title(
                         "Z",
                         "+00:00"
                     )
+                )
+
+                start_time = (
+                    start_dt.strftime("%H:%M")
                 )
 
                 event_date = (
@@ -387,6 +400,10 @@ def find_event_by_title(
                         )
                     )
 
+                    end_time = (
+                        end_dt.strftime("%H:%M")
+                    )
+
                     duration_minutes = int(
                         (
                             end_dt - start_dt
@@ -394,7 +411,7 @@ def find_event_by_title(
                     )
 
         except Exception:
-            duration_minutes = None
+            continue
 
         # -------------------
         # FINAL SCORE
@@ -413,9 +430,18 @@ def find_event_by_title(
             scored_events.append({
                 "event_id": event.get("id"),
                 "title": event.get("summary"),
-                "start": event.get("start"),
-                "end": event.get("end"),
+
+                "start_datetime": start_datetime,
+                "end_datetime": end_datetime,
+
+                "start_time": start_time,
+                "end_time": end_time,
+
+                "date": event_date,
+                "day": event_day,
+
                 "duration_minutes": duration_minutes,
+
                 "score": round(score, 2)
             })
 

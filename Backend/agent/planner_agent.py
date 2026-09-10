@@ -116,7 +116,7 @@ def planner_agent(
 
     state.current_workflow_step = 0
 
-    state.current_step = "planner"
+    state.current_agent = "planner"
 
     state.next_step = "executor"
 
