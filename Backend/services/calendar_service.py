@@ -154,6 +154,10 @@ def update_event(
         )
         .execute()
     )
+    print("UPDATE EVENT CALLED")
+    print("event_id =", event_id)
+    print("start_time =", start_time)
+    print("end_time =", end_time)
     return{
         "success":True,
         "event":updated_event

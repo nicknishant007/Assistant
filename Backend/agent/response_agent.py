@@ -1,9 +1,9 @@
-from prompt.response_prompt import (
+from agent.prompt.response_prompt import (
     RESPONSE_PROMPT
 )
 
 from agent.state import AgentState
-from call_llm import llm
+from agent.call_llm import llm
 
 
 def response_agent(
@@ -20,7 +20,8 @@ def response_agent(
 
     response = llm.invoke(
         [
-            ("system", prompt)
+            ("system", prompt),
+            ("user",state.user_query)
         ]
     )
 

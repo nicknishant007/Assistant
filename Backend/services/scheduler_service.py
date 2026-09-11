@@ -172,15 +172,22 @@ def choose_best_slot(
         duration_minutes=duration_minutes
     )
 
-# SCHEDULE A EVENT (EVENT_TITLE, DATE, DURATION GIVEN)
+# SCHEDULE A EVENT (EVENT_TITLE, DATE, DURATION GIVE)
+
+
 def schedule_task_fixed_time(
     db,
-    user_id:str,
-    title:str,
+    user_id: str,
+    title: str,
     start_datetime,
-    duration_minutes:int
+    duration_minutes: int
 ):
-    
+
+    if isinstance(start_datetime, str):
+        start_datetime = datetime.fromisoformat(
+            start_datetime
+        )
+
     end_datetime = (
         start_datetime +
         timedelta(minutes=duration_minutes)
@@ -383,6 +390,15 @@ def reschedule_event(
         start_time=start_time,
         end_time=end_time
     )
+    print("EVENT ID:", event_id)
+    print("TITLE:", title)
+
+    print("DATE:", date)
+    print("START TIME:", start_time)
+    print("END TIME:", end_time)
+
+    print("START DATETIME:", start_datetime)
+    print("END DATETIME:", end_datetime)
 
     return update_event(
         db=db,
