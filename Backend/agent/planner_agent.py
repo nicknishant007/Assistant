@@ -1,12 +1,11 @@
 import json
 from datetime import datetime
 from zoneinfo import ZoneInfo
+
 from agent.state import AgentState
 from agent.prompt.planner_prompt import PLANNER_PROMPT
 from tools.tool_registry import get_tool_descriptions
 from call_llm import llm
-
-
 
 
 def build_chat_history(history):
@@ -54,6 +53,7 @@ def planner_agent(
         )
 
     try:
+
         result = json.loads(content)
 
     except Exception as e:
@@ -62,34 +62,17 @@ def planner_agent(
             f"Planner JSON Parse Error: {e}"
         )
 
-        state.next_step = "error"
-
-        print("\nPlanner Parse Error:")
-        print(content)
-
-        return state
-
-    # -------------------------
-    # ASK USER FLOW
-    # -------------------------
-
-    if result.get("action") == "ask_user":
-
-        state.pending_action = "ask_user"
-
-        state.pending_question = (
-            result["message"]
+        state.final_response = (
+            "I couldn't understand the request."
         )
 
-        state.current_step = "planner"
-
-        state.next_step = "ask_user"
+        state.next_step = "response"
 
         return state
 
-    # -------------------------
-    # WORKFLOW FLOW
-    # -------------------------
+    # ----------------------------------------
+    # SAVE PLAN
+    # ----------------------------------------
 
     state.plan = result
 
@@ -106,6 +89,25 @@ def planner_agent(
     state.current_workflow_step = 0
 
     state.current_agent = "planner"
+
+    # ----------------------------------------
+    # GENERAL QUESTION
+    # ----------------------------------------
+
+    if not state.workflow:
+
+        state.final_response = result.get(
+            "response",
+            "No action required."
+        )
+
+        state.next_step = "response"
+
+        return state
+
+    # ----------------------------------------
+    # EXECUTE WORKFLOW
+    # ----------------------------------------
 
     state.next_step = "executor"
 

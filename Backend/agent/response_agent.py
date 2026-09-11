@@ -3,7 +3,6 @@ from prompt.response_prompt import (
 )
 
 from agent.state import AgentState
-
 from call_llm import llm
 
 
@@ -15,14 +14,23 @@ def response_agent(
         user_query=state.user_query,
         validation_result=state.validation_result,
         step_results=state.step_results,
-        error=state.error
+        error=state.error or "",
+        final_response=state.final_response or ""
     )
 
-    response = llm(prompt)
+    response = llm.invoke(
+        [
+            ("system", prompt)
+        ]
+    )
 
-    state.final_response = response
+    if hasattr(response, "content"):
+        state.final_response = response.content
+    else:
+        state.final_response = str(response)
 
-    state.next_step = None
+    state.current_agent = "response"
     state.next_agent = None
+    state.next_step = None
 
     return state

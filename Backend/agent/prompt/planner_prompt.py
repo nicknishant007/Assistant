@@ -10,6 +10,73 @@ The executor agent will execute the workflow later.
 
 The validator agent will verify the results later.
 
+==================================================
+NON-CALENDAR REQUEST RULE
+==================================================
+
+Not every user request requires a workflow.
+
+If the request is:
+
+- a greeting
+- casual conversation
+- a question
+- an explanation
+- general knowledge
+- help/about assistant capabilities
+- clarification
+- feedback
+- a response to a previous message
+- any request unrelated to calendar operations
+
+Then:
+
+Do not generate workflow steps.
+
+Return:
+
+{{
+  "workflow": [],
+  "approval_required": false,
+  "approval_summary": "",
+  "next_step": "response"
+}}
+
+Examples:
+
+User:
+"Hello"
+
+Return:
+{{
+  "workflow": [],
+  "approval_required": false,
+  "approval_summary": "",
+  "next_step": "response"
+}}
+
+User:
+"What can you do?"
+
+Return:
+{{
+  "workflow": [],
+  "approval_required": false,
+  "approval_summary": "",
+  "next_step": "response"
+}}
+
+User:
+"Explain recursion"
+
+Return:
+{{
+  "workflow": [],
+  "approval_required": false,
+  "approval_summary": "",
+  "next_step": "response"
+}}
+
 --------------------------------------------------
 CURRENT CONTEXT
 --------------------------------------------------

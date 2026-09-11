@@ -2,17 +2,6 @@ from tools.tool_registry import TOOLS
 from agent.state import AgentState
 
 
-APPROVAL_REQUIRED_TOOLS = {
-
-    "delete_task": "delete_event",
-    "schedule_task_fixed_time": "schedule_event",
-    "schedule_task_auto": "schedule_event",
-    "reschedule_task_fixed": "reschedule_event",
-    "reschedule_task_day": "reschedule_event",
-    "reschedule_task_next_available": "reschedule_event",
-}
-
-
 def resolve(value, step_results):
 
     if isinstance(value, dict):
@@ -59,8 +48,8 @@ def executor_agent(
 
         state.error = "No workflow found"
 
-        state.next_step = "response"
-        state.next_agent = "response"
+        state.next_step = "validator"
+        state.next_agent = "validator"
 
         return state
 
@@ -70,12 +59,8 @@ def executor_agent(
 
     if state.current_workflow_step >= len(workflow):
 
-        state.final_response = (
-            "Workflow completed successfully."
-        )
-
-        state.next_step = "response"
-        state.next_agent = "response"
+        state.next_step = "validator"
+        state.next_agent = "validator"
 
         return state
 
@@ -96,10 +81,27 @@ def executor_agent(
     # RESOLVE PLACEHOLDERS
     # --------------------------------------------------
 
-    resolved_params = resolve(
-        params,
-        state.step_results
-    )
+    try:
+
+        resolved_params = resolve(
+            params,
+            state.step_results
+        )
+
+    except Exception as e:
+
+        state.error = (
+            f"Parameter resolution failed: {str(e)}"
+        )
+
+        state.step_status[
+            step_id
+        ] = "failed"
+
+        state.next_step = "validator"
+        state.next_agent = "validator"
+
+        return state
 
     # --------------------------------------------------
     # FIND TOOL
@@ -115,7 +117,12 @@ def executor_agent(
             f"Tool not found: {tool_name}"
         )
 
-        state.next_step = "response"
+        state.step_status[
+            step_id
+        ] = "failed"
+
+        state.next_step = "validator"
+        state.next_agent = "validator"
 
         return state
 
@@ -129,7 +136,12 @@ def executor_agent(
             f"No executable function for tool: {tool_name}"
         )
 
-        state.next_step = "response"
+        state.step_status[
+            step_id
+        ] = "failed"
+
+        state.next_step = "validator"
+        state.next_agent = "validator"
 
         return state
 
@@ -153,8 +165,8 @@ def executor_agent(
             step_id
         ] = "failed"
 
-        state.next_step = "response"
-        state.next_agent = "response"
+        state.next_step = "validator"
+        state.next_agent = "validator"
 
         return state
 
@@ -171,134 +183,30 @@ def executor_agent(
     ] = "completed"
 
     # --------------------------------------------------
-    # EVENT MATCH APPROVAL
-    # --------------------------------------------------
-
-    if tool_name == "find_event_by_title":
-
-        matches = []
-
-        if result.get("best_match"):
-            matches.append(
-                result["best_match"]
-            )
-
-        matches.extend(
-            result.get(
-                "alternatives",
-                []
-            )
-        )
-
-        if len(matches) > 1:
-
-            state.candidate_events = matches
-
-            state.approval_required = True
-
-            state.approval["pending"] = True
-
-            state.approval_status = "pending"
-
-            state.approval_source = (
-                "event_selection"
-            )
-
-            state.approval_message = (
-                "Multiple events matched. "
-                "Which event would you like to use?"
-            )
-
-            state.next_step = "approval"
-            state.next_agent = "approval"
-
-            return state
-
-        if len(matches) == 1:
-
-            state.selected_event = (
-                matches[0]
-            )
-
-    # --------------------------------------------------
-    # SLOT APPROVAL
-    # --------------------------------------------------
-
-    if tool_name in {
-        "choose_best_slot",
-        "find_next_available_day"
-    }:
-
-        state.approval_required = True
-
-        state.approval["pending"] = True
-
-        state.approval_status = "pending"
-
-        state.approval_source = (
-            "slot_confirmation"
-        )
-
-        state.approval_message = (
-            "I found a suitable slot. "
-            "Would you like me to continue?"
-        )
-
-        state.next_step = "approval"
-        state.next_agent = "approval"
-
-        return state
-
-    # --------------------------------------------------
-    # DESTRUCTIVE ACTION APPROVAL
-    # --------------------------------------------------
-
-    if tool_name in APPROVAL_REQUIRED_TOOLS:
-
-        if state.approval_status != "approved":
-
-            state.approval_required = True
-
-            state.approval["pending"] = True
-
-            state.approval_status = "pending"
-
-            state.approval_source = (
-                APPROVAL_REQUIRED_TOOLS[
-                    tool_name
-                ]
-            )
-
-            state.approval_message = (
-                f"Approve action: {tool_name}?"
-            )
-
-            state.next_step = "approval"
-            state.next_agent = "approval"
-
-            return state
-
-    # --------------------------------------------------
-    # NEXT STEP
+    # ADVANCE WORKFLOW
     # --------------------------------------------------
 
     state.current_workflow_step += 1
 
+    # --------------------------------------------------
+    # MORE STEPS REMAIN
+    # --------------------------------------------------
+
     if (
         state.current_workflow_step
-        >= len(workflow)
+        < len(workflow)
     ):
-
-        state.final_response = (
-            "Workflow completed successfully."
-        )
-
-        state.next_step = "response"
-        state.next_agent = "response"
-
-    else:
 
         state.next_step = "executor"
         state.next_agent = "executor"
+
+        return state
+
+    # --------------------------------------------------
+    # WORKFLOW FINISHED
+    # --------------------------------------------------
+
+    state.next_step = "validator"
+    state.next_agent = "validator"
 
     return state
