@@ -53,11 +53,14 @@ def free_slots_tool(
     user_id,
     date
 ):
-    return find_free_slots(
+    slots=find_free_slots(
         db=db,
         user_id=user_id,
         date=date
     )
+    return {
+        "free_slots":slots
+    }
 
 
 # CHOOSE BEST SLOT

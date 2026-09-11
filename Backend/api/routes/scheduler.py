@@ -12,7 +12,7 @@ from schemas.scheduler import (
 
 from services.scheduler_service import (
     schedule_task_fixed_time,
-    reschedule_task_day,
+    reschedule_event,
     find_free_slots,
     find_next_available_day
 )
@@ -108,12 +108,18 @@ def reschedule_existing_task(
     current_user=Depends(get_current_user)
 ):
 
-    event = reschedule_task_day(
+    event = reschedule_event(
         db=db,
         user_id=current_user.id,
-        event_name=request.event_name,
-        start_date=request.start_date,
-        duration_minutes=request.duration_minutes
+        event_id=request.event_id,
+        title=request.title,
+
+        date=request.date,
+        start_time=request.start_time,
+        end_time=request.end_time,
+
+        start_datetime=request.start_datetime,
+        end_datetime=request.end_datetime
     )
 
     if not event:

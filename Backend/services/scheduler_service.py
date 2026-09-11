@@ -85,6 +85,8 @@ def find_free_slots(
     user_id: str,
     date
 ):
+    if isinstance(date, str):
+        date = datetime.fromisoformat(date).date()
 
     preferences = get_user_preferences(
         db,
@@ -112,6 +114,8 @@ def choose_best_slot_from_free_slots(
     date,
     duration_minutes
 ):
+    if isinstance(date, str):
+        date = datetime.fromisoformat(date).date()
 
     required_duration = timedelta(
         minutes=duration_minutes
@@ -158,7 +162,10 @@ def choose_best_slot(
     free_slots,
     date,
     duration_minutes: int
-):
+):  
+    if isinstance(date, str):
+        date = datetime.fromisoformat(date).date()
+
     return choose_best_slot_from_free_slots(
         free_slots=free_slots,
         date=date,
@@ -294,6 +301,9 @@ def normalize_datetimes(
     start_time=None,
     end_time=None
 ):
+    if isinstance(date, str):
+        date = datetime.fromisoformat(date).date()
+
     """
     Supports either:
 
@@ -348,6 +358,9 @@ def reschedule_event(
     start_time=None,
     end_time=None
 ):
+    if isinstance(date, str):
+        date = datetime.fromisoformat(date).date()
+
     """
     Reschedule an existing event.
 

@@ -1,23 +1,12 @@
 import json
 from datetime import datetime
 from zoneinfo import ZoneInfo
-
-from langchain.chat_models import init_chat_model
-
-from config.settings import settings
 from agent.state import AgentState
 from agent.prompt.planner_prompt import PLANNER_PROMPT
 from tools.tool_registry import get_tool_descriptions
+from call_llm import llm
 
 
-llm = init_chat_model(
-    model="gemini-2.5-flash",
-    model_provider="google_genai",
-    google_api_key=settings.GOOGLE_API_KEY,
-    temperature=0.1,
-    max_tokens=4000,
-    max_retries=3
-)
 
 
 def build_chat_history(history):

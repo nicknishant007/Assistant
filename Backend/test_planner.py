@@ -3,7 +3,7 @@ from agent.state import AgentState
 
 
 state = AgentState(
-    user_query="Schedule Gym tomorrow at 6 PM for 1 hour" 
+    user_query="Reschedule my 3pm meeting to tomorrow." 
     
      
     

@@ -108,7 +108,10 @@ def create_event(
         .execute()
     )
 
-    return created_event
+    return {
+        "success":True,
+        "event":created_event
+    }
 
 ##UPDATE EVENT
 def update_event(
@@ -142,7 +145,7 @@ def update_event(
         }
     }
 
-    return (
+    updated_event=(
         service.events()
         .update(
             calendarId="primary",
@@ -151,6 +154,10 @@ def update_event(
         )
         .execute()
     )
+    return{
+        "success":True,
+        "event":updated_event
+    }
 
 #Delete Event
 def delete_event(
@@ -170,6 +177,8 @@ def delete_event(
     ).execute()
 
     return {
+        "success":True,
+        "event_id":event_id,
         "message": "Event Deleted"
     }
 

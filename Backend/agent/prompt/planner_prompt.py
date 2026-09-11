@@ -67,16 +67,23 @@ All datetime values must use ISO-8601 format.
 
 Examples:
 
-2026-09-27T10:00:00+05:30
-2026-12-25T15:30:00+05:30
+Date only:
+YYYY-MM-DD
 
-Date:
-
+Example:
 2026-09-27
 
-Time:
+Time only:
+HH:MM:SS
 
-10:00
+Example:
+18:00:00
+
+Datetime:
+YYYY-MM-DDTHH:MM:SS±HH:MM
+
+Example:
+2026-09-27T18:00:00+05:30
 
 Never invent datetime components.
 
@@ -139,7 +146,7 @@ reschedule_task_fixed
 DATETIME CONSTRUCTION RULE
 ==================================================
 
-The planner must never construct a datetime
+The planner must never construct datetime values
 using workflow placeholders.
 
 Invalid:
@@ -148,40 +155,29 @@ Invalid:
 
 "{{step_1.best_match.date}}T10:00"
 
-When a date must change while preserving time:
-
-Pass:
+When a date changes but the original event time
+must be preserved, pass:
 
 {{
-  "new_date": "2026-09-27"
+  "date": "2026-09-27",
+  "start_time": "{{{{step_1.best_match.start_time}}}}",
+  "end_time": "{{{{step_1.best_match.end_time}}}}"
 }}
 
-The executor is responsible for constructing
-start_datetime and end_datetime.
+The executor is responsible for converting:
 
-The planner must never concatenate dates and
-times manually.
+- date
+- start_time
+- end_time
 
+into:
 
-==================================================
-RESCHEDULE TOOL RULE
-==================================================
+- start_datetime
+- end_datetime
 
-All event modifications use:
+before calling the scheduling service.
 
-reschedule_event
-
-The planner must not select different
-reschedule tools based on scheduling strategy.
-
-The executor will resolve:
-
-- exact datetime
-- same time
-- new date
-- next available slot
-
-before calling reschedule_event.
+The planner must never concatenate dates and times.
 
 ==================================================
 RESCHEDULE TOOL RULE
@@ -202,6 +198,25 @@ The executor will resolve:
 - next available slot
 
 before calling reschedule_event. 
+
+==================================================
+RESCHEDULE PARAMETER RULE
+==================================================
+
+When preserving the existing event time and only
+changing the date, use:
+
+{{
+  "date": "YYYY-MM-DD",
+  "start_time": "{{{{step_x.best_match.start_time}}}}",
+  "end_time": "{{{{step_x.best_match.end_time}}}}"
+}}
+
+Do not construct start_datetime or end_datetime.
+
+The executor will convert date + start_time + end_time
+into start_datetime and end_datetime before executing
+the tool.
 
 ==================================================
 AMBIGUITY RULE
@@ -274,20 +289,6 @@ Next available:
 find_event_by_title
 find_next_available_day
 reschedule_event
-
-User:
-
-"Move Agent Testing Event to Sept 27 at the same time"
-
-Valid workflow parameter values:
-
-{{
-  "start_datetime":
-    "2026-09-27T{{step_1.best_match.start_time}}",
-
-  "end_datetime":
-    "2026-09-27T{{step_1.best_match.end_time}}"
-}}
 
 The planner may construct new datetimes
 only when:

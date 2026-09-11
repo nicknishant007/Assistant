@@ -18,46 +18,35 @@ def test_real_executor():
 
         user_query="Reschedule Executor Schedule Test",
 
-        workflow=[
-
-            
+        
+        workflow = [
     {
         "id": "step_1",
-        "tool": "find_event_by_title",
+        "tool": "find_free_slots",
         "params": {
-            "title": "Executor Schedule Test"
+            "date": "2026-09-11"
         }
     },
-
     {
         "id": "step_2",
-        "tool": "find_next_available_day",
+        "tool": "choose_best_slot",
         "params": {
-            "start_date": datetime.now(),
-            "duration_minutes":
-                "{{step_1.best_match.duration_minutes}}"
+            "free_slots": "{{step_1.free_slots}}",
+            "date": "2026-09-11",
+            "duration_minutes": 60
         }
     },
-
     {
         "id": "step_3",
-        "tool": "reschedule_task_next_available",
+        "tool": "schedule_task_auto",
         "params": {
-            "event_id":
-                "{{step_1.best_match.event_id}}",
-
-            "title":
-                "{{step_1.best_match.title}}",
-
-            "start_datetime":
-                "{{step_2.slot.start_datetime}}",
-
-            "end_datetime":
-                "{{step_2.slot.end_datetime}}"
+            "title": "Gym",
+            "start_datetime": "{{step_2.start_datetime}}",
+            "end_datetime": "{{step_2.end_datetime}}"
         }
     }
-]
-
+],
+        
         
     )
 
