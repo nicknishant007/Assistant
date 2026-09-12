@@ -266,6 +266,135 @@ The executor will resolve:
 
 before calling reschedule_event. 
 
+When the user wants to reschedule an existing event:
+
+1. First identify the event.
+2. Then perform the reschedule.
+
+IMPORTANT:
+
+A date associated with the existing event must be used in
+find_event_by_title.
+
+Examples:
+
+"reschedule my tomorrow agent testing event to 15th"
+
+Workflow:
+
+[
+  {{
+    "id": "step_1",
+    "tool": "find_event_by_title",
+    "params": {{
+      "title": "agent testing",
+      "date": "<tomorrow_date>"
+    }}
+  }},
+  {{
+    "id": "step_2",
+    "tool": "reschedule_event",
+    "params": {{
+      "event_id": "{{{{step_1.best_match.event_id}}}}",
+      "title": "{{{{step_1.best_match.title}}}}",
+      "date": "<15th_date>",
+      "start_time": "{{{{step_1.best_match.start_time}}}}",
+      "end_time": "{{{{step_1.best_match.end_time}}}}"
+    }}
+  }}
+]
+
+------------------------------------------------
+
+"reschedule my yesterday agent testing event to 15th"
+
+Workflow:
+
+[
+  {{
+    "id": "step_1",
+    "tool": "find_event_by_title",
+    "params": {{
+      "title": "agent testing",
+      "date": "<yesterday_date>"
+    }}
+  }},
+  {{
+    "id": "step_2",
+    "tool": "reschedule_event",
+    "params": {{
+      "event_id": "{{{{step_1.best_match.event_id}}}}",
+      "title": "{{{{step_1.best_match.title}}}}",
+      "date": "<15th_date>",
+      "start_time": "{{{{step_1.best_match.start_time}}}}",
+      "end_time": "{{{{step_1.best_match.end_time}}}}"
+    }}
+  }}
+]
+
+------------------------------------------------
+
+"move my monday team sync to friday"
+
+Workflow:
+
+[
+  {{
+    "id": "step_1",
+    "tool": "find_event_by_title",
+    "params": {{
+      "title": "team sync",
+      "day": "monday"
+    }}
+  }},
+  {{
+    "id": "step_2",
+    "tool": "reschedule_event",
+    "params": {{
+      "event_id": "{{{{step_1.best_match.event_id}}}}",
+      "title": "{{{{step_1.best_match.title}}}}",
+      "date": "<friday_date>",
+      "start_time": "{{{{step_1.best_match.start_time}}}}",
+      "end_time": "{{{{step_1.best_match.end_time}}}}"
+    }}
+  }}
+]
+
+------------------------------------------------
+
+DO NOT pass the target reschedule date into find_event_by_title.
+
+Wrong:
+
+find_event_by_title(
+    title="agent testing",
+    date="2026-09-15"
+)
+
+when the user means:
+"move the event TO 15th"
+
+Correct:
+
+find_event_by_title(
+    title="agent testing",
+    date="<current_event_date>"
+)
+
+reschedule_event(
+    event_id=...,
+    date="2026-09-15"
+)
+
+If the user mentions two dates in a rescheduling request:
+
+- The date describing the existing event
+  (yesterday, tomorrow, Monday, Sept 12, etc.)
+  belongs to find_event_by_title.
+
+- The date describing the destination
+  (move to Friday, move to Sept 15, postpone to next week, etc.)
+  belongs to reschedule_event.
 ==================================================
 RESCHEDULE PARAMETER RULE
 ==================================================

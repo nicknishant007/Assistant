@@ -89,5 +89,5 @@ if __name__ == "__main__":
     run_test(
         db=SessionLocal(),
         user_id="80461e59-6245-4cdb-afb1-354696d8755f",
-        query="Reschedule my agent testing event on 15th."
+        query="Scheduke a  agent testing event on 15th from 3 to 5 pm."
     )

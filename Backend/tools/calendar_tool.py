@@ -16,10 +16,14 @@ def get_events_tool(
 def find_event_by_title_tool(
     db,
     user_id: str,
-    title: str
+    title: str,
+    date=None,
+    day=None
 ):
     return find_event_by_title(
         db=db,
         user_id=user_id,
-        title=title
+        title=title,
+        date=date,
+        day=day
     )
