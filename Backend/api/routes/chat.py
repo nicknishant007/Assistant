@@ -6,8 +6,6 @@ from schemas.chat import (ChatRequest,ChatResponse)
 from services.chat_service import chat_service
 from dependencies.auth import get_current_user
 from database.models.user import User
-from Backend.agent.state import AgentState
-from Backend.agent.graph import graph
 
 router = APIRouter(
     prefix="/chat",
@@ -31,23 +29,3 @@ def chat(
         conversation_id=data.conversation_id,
         message=data.message
     )
-
-def chat_service(
-    db,
-    user_id: str,
-    conversation_id: str,
-    message: str
-):
-
-    state = AgentState(
-        db=db,
-        user_id=user_id,
-        conversation_id=conversation_id,
-        user_query=message
-    )
-
-    result = graph.invoke(state)
-
-    return {
-        "response": result.final_response
-    }

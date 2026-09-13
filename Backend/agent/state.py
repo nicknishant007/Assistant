@@ -19,6 +19,10 @@ class AgentState(BaseModel):
         Field(default_factory=list)
     )
 
+    graph_messages: list[dict] = (
+        Field(default_factory=list)
+    )
+
     # ==================================================
     # PLANNER
     # ==================================================

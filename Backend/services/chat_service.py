@@ -3,10 +3,11 @@ from sqlalchemy.orm import Session
 from schemas.chat import ChatResponse
 
 from agent.state import AgentState
-from agent.planner_agent import planner_agent
+from agent.graph import graph
 
 from services.conversation_service import (
     create_conversation,
+    get_conversation,
     add_message,
     get_recent_messages
 )
@@ -19,11 +20,29 @@ def chat_service(
     conversation_id: str | None = None
 ):
 
-    # --------------------------------------------------
-    # Create Conversation
-    # --------------------------------------------------
+    # ==========================================
+    # Resolve Conversation
+    # ==========================================
 
-    if not conversation_id:
+    if conversation_id:
+
+        conversation = get_conversation(
+            db=db,
+            conversation_id=conversation_id,
+            user_id=user_id
+        )
+
+        if not conversation:
+
+            conversation = create_conversation(
+                db=db,
+                user_id=user_id,
+                title=message[:50]
+            )
+
+            conversation_id = conversation.id
+
+    else:
 
         conversation = create_conversation(
             db=db,
@@ -33,9 +52,19 @@ def chat_service(
 
         conversation_id = conversation.id
 
-    # --------------------------------------------------
+    # ==========================================
+    # Load Conversation History
+    # ==========================================
+
+    messages = get_recent_messages(
+        db=db,
+        conversation_id=conversation_id,
+        limit=50
+    )
+
+    # ==========================================
     # Save User Message
-    # --------------------------------------------------
+    # ==========================================
 
     add_message(
         db=db,
@@ -44,73 +73,57 @@ def chat_service(
         content=message
     )
 
-    # --------------------------------------------------
-    # Fetch Last Messages
-    # --------------------------------------------------
-
-    messages = get_recent_messages(
-        db=db,
-        conversation_id=conversation_id,
-        limit=50
-    )
-
-    # --------------------------------------------------
+    # ==========================================
     # Build Agent State
-    # --------------------------------------------------
+    # ==========================================
 
     state = AgentState(
+        db=db,
         user_id=user_id,
         conversation_id=conversation_id,
-        user_query=message
+        user_query=message,
+        conversation_history=[
+            {
+                "role": msg.role,
+                "content": msg.content
+            }
+            for msg in messages
+        ]
     )
 
-    state.conversation_history = [
-        {
-            "role": msg.role,
-            "content": msg.content
-        }
-        for msg in messages
-    ]
+    # ==========================================
+    # Run Graph
+    # ==========================================
 
-    # --------------------------------------------------
-    # Planner
-    # --------------------------------------------------
+    result = graph.invoke(state)
 
-    state = planner_agent(
-        state=state
-    )
+    # ==========================================
+    # Handle LangGraph Result
+    # ==========================================
 
-    # --------------------------------------------------
-    # Extract Response
-    # --------------------------------------------------
-
-    if state.next_step == "ask_user":
+    if isinstance(result, dict):
 
         assistant_message = (
-            state.pending_question
-        )
-
-    elif state.next_step == "approval":
-
-        assistant_message = (
-            state.approval_message
-        )
-
-    elif state.final_response:
-
-        assistant_message = (
-            state.final_response
+            result.get("final_response")
+            or result.get("pending_question")
+            or result.get("approval_message")
+            or result.get("error")
+            or "Unable to process request."
         )
 
     else:
 
         assistant_message = (
-            "Unable to process request."
+            result.final_response
+            or result.pending_question
+            or result.approval_message
+            or result.error
+            or "Unable to process request."
         )
 
-    # --------------------------------------------------
+    # ==========================================
     # Save Assistant Message
-    # --------------------------------------------------
+    # ==========================================
 
     add_message(
         db=db,
@@ -119,9 +132,9 @@ def chat_service(
         content=assistant_message
     )
 
-    # --------------------------------------------------
-    # Return Response
-    # --------------------------------------------------
+    # ==========================================
+    # Return
+    # ==========================================
 
     return ChatResponse(
         conversation_id=conversation_id,

@@ -4,6 +4,7 @@ from agent.prompt.response_prompt import (
 
 from agent.state import AgentState
 from agent.call_llm import llm
+from agent.utils.messages import append_message
 
 
 def response_agent(
@@ -21,16 +22,32 @@ def response_agent(
     response = llm.invoke(
         [
             ("system", prompt),
-            ("user",state.user_query)
+            ("user", state.user_query)
         ]
     )
 
-    if hasattr(response, "content"):
-        state.final_response = response.content
-    else:
-        state.final_response = str(response)
+    content = (
+        response.content
+        if hasattr(response, "content")
+        else str(response)
+    )
+
+    state.final_response = (
+        content.strip()
+        if content
+        else "Sorry, I couldn't generate a response."
+    )
+
+    # Save assistant response for DB persistence
+    append_message(
+        state=state,
+        role="assistant",
+        content=state.final_response
+    )
 
     state.current_agent = "response"
+
+    # Graph finished
     state.next_agent = None
     state.next_step = None
 

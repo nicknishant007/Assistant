@@ -6,6 +6,7 @@ from agent.state import AgentState
 from agent.prompt.planner_prompt import PLANNER_PROMPT
 from tools.tool_registry import get_tool_descriptions
 from agent.call_llm import llm
+from agent.utils.messages import append_message
 
 
 def build_chat_history(history):
@@ -66,13 +67,19 @@ def planner_agent(
             "I couldn't understand the request."
         )
 
-        state.next_step = "response"
+        append_message(
+            state,
+            "assistant",
+            state.final_response
+        )
+
+        state.next_agent = None
 
         return state
 
-    # ----------------------------------------
+    # ==========================================
     # SAVE PLAN
-    # ----------------------------------------
+    # ==========================================
 
     state.plan = result
 
@@ -90,25 +97,65 @@ def planner_agent(
 
     state.current_agent = "planner"
 
-    # ----------------------------------------
-    # GENERAL QUESTION
-    # ----------------------------------------
+    # ==========================================
+    # CLARIFICATION QUESTION
+    # ==========================================
 
-    if not state.workflow:
+    if result.get("pending_question"):
 
-        state.final_response = result.get(
-            "response",
-            "No action required."
+        state.pending_question = (
+            result["pending_question"]
         )
 
-        state.next_step = "response"
+        append_message(
+            state,
+            "assistant",
+            state.pending_question
+        )
+
+        state.next_agent = None
 
         return state
 
-    # ----------------------------------------
-    # EXECUTE WORKFLOW
-    # ----------------------------------------
+    # ==========================================
+    # APPROVAL REQUEST
+    # ==========================================
 
-    state.next_step = "executor"
+    if result.get("approval_message"):
+
+        state.approval_message = (
+            result["approval_message"]
+        )
+
+        append_message(
+            state,
+            "assistant",
+            state.approval_message
+        )
+
+        state.next_agent = None
+
+        return state
+
+    # ==========================================
+    # GENERAL CONVERSATION
+    # ==========================================
+
+    if not state.workflow:
+
+        state.goal = result.get(
+            "goal",
+            state.user_query
+        )
+
+        state.next_agent = "response"
+
+        return state
+
+    # ==========================================
+    # EXECUTE WORKFLOW
+    # ==========================================
+
+    state.next_agent = "executor"
 
     return state

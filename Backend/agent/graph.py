@@ -14,10 +14,6 @@ from agent.response_agent import response_agent
 
 builder = StateGraph(AgentState)
 
-# --------------------------------------------------
-# NODES
-# --------------------------------------------------
-
 builder.add_node(
     "planner",
     planner_agent
@@ -38,31 +34,12 @@ builder.add_node(
     response_agent
 )
 
-# --------------------------------------------------
-# ROUTERS
-# --------------------------------------------------
 
-def planner_router(
+def router(
     state: AgentState
 ):
-    return state.next_step
+    return state.next_agent
 
-
-def executor_router(
-    state: AgentState
-):
-    return state.next_step
-
-
-def validator_router(
-    state: AgentState
-):
-    return state.next_step
-
-
-# --------------------------------------------------
-# FLOW
-# --------------------------------------------------
 
 builder.add_edge(
     START,
@@ -71,35 +48,43 @@ builder.add_edge(
 
 builder.add_conditional_edges(
     "planner",
-    planner_router,
+    router,
     {
         "executor": "executor",
-        "response": "response"
+        "response": "response",
+        "END": END
     }
 )
 
 builder.add_conditional_edges(
     "executor",
-    executor_router,
+    router,
     {
         "executor": "executor",
         "validator": "validator",
-        "response": "response"
+        "planner": "planner",
+        "response": "response",
+        "END": END
     }
 )
 
 builder.add_conditional_edges(
     "validator",
-    validator_router,
+    router,
     {
         "planner": "planner",
-        "response": "response"
+        "response": "response",
+        "END": END
     }
 )
 
-builder.add_edge(
+builder.add_conditional_edges(
     "response",
-    END
+    router,
+    {
+        "planner": "planner",
+        "END": END
+    }
 )
 
 graph = builder.compile()
