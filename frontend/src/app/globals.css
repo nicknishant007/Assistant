@@ -1,0 +1,114 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Theme CSS variables — the single source of truth Tailwind and every
+ * component read from. These values are generated from /src/theme/*.ts;
+ * keep them in sync (or wire up a build script that writes this file
+ * from the token modules) rather than editing colors ad hoc elsewhere.
+ */
+:root {
+  --color-ink: #14151a;
+  --color-paper: #f4efdc;
+  --color-surface: #ffffff;
+  --color-mint: #8fe3c8;
+  --color-cobalt: #3d3de8;
+  --color-pink: #f3a6c6;
+  --color-yellow: #f6d24c;
+  --color-success: #2fae66;
+  --color-danger: #e8543d;
+  --color-warning: #f6d24c;
+  --color-info: #3d3de8;
+
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-pill: 999px;
+
+  --shadow-sm: 3px 3px 0 0 var(--color-ink);
+  --shadow-md: 5px 5px 0 0 var(--color-ink);
+  --shadow-lg: 8px 8px 0 0 var(--color-ink);
+  --shadow-pressed: 2px 2px 0 0 var(--color-ink);
+}
+
+* {
+  border-color: var(--color-ink);
+}
+
+html,
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
+
+body {
+  font-family: var(--font-body);
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+/* Focus ring — accessible and on-brand (solid, not a soft blue glow) */
+:focus-visible {
+  outline: 2.5px solid var(--color-cobalt);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Scrollbar — thin, on-brand, not the OS default */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-ink);
+  border-radius: var(--radius-pill);
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* --- FullCalendar re-theme ------------------------------------------- */
+.fc {
+  font-family: var(--font-body);
+  --fc-border-color: var(--color-ink);
+  --fc-today-bg-color: color-mix(in srgb, var(--color-yellow) 35%, transparent);
+  --fc-button-bg-color: var(--color-surface);
+  --fc-button-border-color: var(--color-ink);
+  --fc-button-text-color: var(--color-ink);
+  --fc-button-active-bg-color: var(--color-mint);
+  --fc-button-hover-bg-color: var(--color-mint);
+}
+.fc .fc-button {
+  border-width: 2px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  box-shadow: none;
+  text-transform: capitalize;
+}
+.fc .fc-toolbar-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+.fc-event {
+  border-width: 2px !important;
+  border-color: var(--color-ink) !important;
+  background-color: var(--color-cobalt) !important;
+  border-radius: var(--radius-sm) !important;
+  padding: 1px 4px;
+}
