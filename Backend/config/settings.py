@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     GOOGLE_API_KEY: str
     MISTRAL_API_KEY: str
     MISTRAL_MODEL: str="mistral-small-latest"
-
+    FRONTEND_URL:str ="http://localhost:3000"
     model_config = SettingsConfigDict(
         env_file=".env",
         extra="ignore"

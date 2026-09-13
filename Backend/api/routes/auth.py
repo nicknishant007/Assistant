@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
-from starlette.requests import Request
+from starlette.requests import Request,RedirectResponse
 from database.session import get_db
 from services.google_oauth import oauth
 from config.settings import settings
@@ -48,7 +48,6 @@ async def callback_google(
     token = await oauth.google.authorize_access_token(
         request
     )
-    print("Google Token:", token)
     #access and refresh tokens from google
     google_access_token=token.get("access_token")
     google_refresh_token=token.get("refresh_token")
@@ -97,7 +96,7 @@ async def callback_google(
             "email": user.email
         }
     )
-
+    response=RedirectResponse(url=f"{settings.FRONTEND_URL}/chat")
     response.set_cookie(
         key="access_token",
         value=access_token,

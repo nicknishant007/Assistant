@@ -1,6 +1,7 @@
 from config.settings import settings
 from fastapi import FastAPI
 from starlette.middleware.sessions import SessionMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 from api.routes.auth import router as auth_router
 from api.routes.scheduler import router as scheduler_router
 from api.routes.chat import router as chat_router
@@ -10,10 +11,15 @@ from api.routes.voice import (
 app = FastAPI(
     title="AI Executive Assistant",
     version="1.0.0"
-)
+) 
 app.add_middleware(
+    CORSMiddleware,
     SessionMiddleware,
-    secret_key=settings.SESSION_SECRET_KEY
+    secret_key=settings.SESSION_SECRET_KEY,
+    all_original=[settings.FRONTEND_URL],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
 )
 
 app.include_router(auth_router)
