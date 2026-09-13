@@ -9,3 +9,5 @@ google-auth
 google-auth-oauthlib
 authlib
 python-jose
+faster-whisper
+edge-tts
