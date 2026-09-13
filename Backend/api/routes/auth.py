@@ -1,7 +1,8 @@
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
-from starlette.requests import Request,RedirectResponse
+from starlette.requests import Request
+from starlette.responses import RedirectResponse
 from database.session import get_db
 from services.google_oauth import oauth
 from config.settings import settings

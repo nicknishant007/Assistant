@@ -14,7 +14,8 @@ from services.scheduler_service import (
     schedule_task_fixed_time,
     reschedule_event,
     find_free_slots,
-    find_next_available_day
+    find_next_available_day,
+    delete_task
 )
 
 from dependencies.auth import get_current_user
@@ -44,6 +45,7 @@ def get_preferences(
 # FREE SLOTS
 @router.get("/free-slots")
 def get_free_slots(
+    date:str,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
@@ -51,7 +53,7 @@ def get_free_slots(
     slots = find_free_slots(
         db=db,
         user_id=current_user.id,
-        date=datetime.now()
+        date=date
     )
 
     return {
@@ -88,7 +90,7 @@ def schedule_new_task(
         db=db,
         user_id=current_user.id,
         title=request.title,
-        date=request.date,
+        start_datetime=request.start_datetime,
         duration_minutes=request.duration_minutes
     )
 
@@ -128,3 +130,16 @@ def reschedule_existing_task(
         }
 
     return event
+
+@router.delete("/event/{event_id}")
+def delete_existing_event(
+    event_id: str,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+
+    return delete_task(
+        db=db,
+        user_id=current_user.id,
+        event_id=event_id
+    )

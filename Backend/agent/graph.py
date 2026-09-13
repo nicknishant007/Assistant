@@ -35,11 +35,20 @@ builder.add_node(
 )
 
 
-def router(
-    state: AgentState
-):
-    return state.next_agent
+def planner_router(state: AgentState):
+    return state.next_agent or "END"
 
+
+def executor_router(state: AgentState):
+    return state.next_agent or "END"
+
+
+def validator_router(state: AgentState):
+    return state.next_agent or "END"
+
+
+def response_router(state: AgentState):
+    return state.next_agent or "END"
 
 builder.add_edge(
     START,
@@ -48,7 +57,7 @@ builder.add_edge(
 
 builder.add_conditional_edges(
     "planner",
-    router,
+    planner_router,
     {
         "executor": "executor",
         "response": "response",
@@ -58,7 +67,7 @@ builder.add_conditional_edges(
 
 builder.add_conditional_edges(
     "executor",
-    router,
+    executor_router,
     {
         "executor": "executor",
         "validator": "validator",
@@ -70,7 +79,7 @@ builder.add_conditional_edges(
 
 builder.add_conditional_edges(
     "validator",
-    router,
+    validator_router,
     {
         "planner": "planner",
         "response": "response",
@@ -80,7 +89,7 @@ builder.add_conditional_edges(
 
 builder.add_conditional_edges(
     "response",
-    router,
+    response_router,
     {
         "planner": "planner",
         "END": END

@@ -1,4 +1,4 @@
-from  datetime import datetime,timedelta,timezone
+from  datetime import datetime,timedelta
 from services.preference_service import (get_user_preferences)
 
 from services.calendar_service import (build_calendar_service,get_day_events,create_event,get_events_range
@@ -244,7 +244,7 @@ def find_next_available_day(
         start_date + timedelta(days=max_days)
     )
 
-    for i in range(max_days):
+    for i in range(max_days+1):
 
         current_date = (
             start_date
@@ -390,15 +390,6 @@ def reschedule_event(
         start_time=start_time,
         end_time=end_time
     )
-    print("EVENT ID:", event_id)
-    print("TITLE:", title)
-
-    print("DATE:", date)
-    print("START TIME:", start_time)
-    print("END TIME:", end_time)
-
-    print("START DATETIME:", start_datetime)
-    print("END DATETIME:", end_datetime)
 
     return update_event(
         db=db,
