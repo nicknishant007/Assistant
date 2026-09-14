@@ -85,5 +85,6 @@ async def voice_chat(
     return {
         "conversation_id": result.conversation_id,
         "response": result.response,
-        "audio_base64": audio_base64
+        "user_message":user_message,
+        "audio_base64": audio_base64,
     }

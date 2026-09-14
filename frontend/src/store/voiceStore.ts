@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { voiceApi } from "@/lib/api/voice";
 import type { RecordingState } from "@/types";
+import { useChatStore } from "./chatStore";
 
 interface VoiceState {
   recordingState: RecordingState;
@@ -12,7 +13,11 @@ interface VoiceState {
   startRecording: () => Promise<void>;
   stopRecording: () => Promise<Blob | null>;
   cancelRecording: () => void;
-  sendRecording: (blob: Blob) => Promise<void>;
+
+  sendRecording: (
+    blob: Blob,
+    conversationId?: string | null
+  ) => Promise<void>;
 }
 
 export const useVoiceStore = create<VoiceState>((set, get) => ({
@@ -24,60 +29,139 @@ export const useVoiceStore = create<VoiceState>((set, get) => ({
 
   startRecording: async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true
+      });
+
       const recorder = new MediaRecorder(stream);
       const chunks: Blob[] = [];
 
-      recorder.ondataavailable = (e) => chunks.push(e.data);
+      recorder.ondataavailable = (e) => {
+        chunks.push(e.data);
+      };
+
       recorder.start();
 
-      set({ mediaRecorder: recorder, chunks, recordingState: "recording", error: null });
+      set({
+        mediaRecorder: recorder,
+        chunks,
+        recordingState: "recording",
+        error: null
+      });
     } catch {
       set({
         recordingState: "error",
-        error: "Microphone permission was denied or is unavailable."
+        error:
+          "Microphone permission was denied or is unavailable."
       });
     }
   },
 
   stopRecording: async () => {
     const { mediaRecorder, chunks } = get();
-    if (!mediaRecorder) return null;
+
+    if (!mediaRecorder) {
+      return null;
+    }
 
     return new Promise((resolve) => {
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunks, { type: mediaRecorder.mimeType || "audio/wevm" });
-        mediaRecorder.stream.getTracks().forEach((t) => t.stop());
-        set({ recordingState: "processing" });
+        const blob = new Blob(chunks, {
+          type:
+            mediaRecorder.mimeType ||
+            "audio/webm"
+        });
+
+        mediaRecorder.stream
+          .getTracks()
+          .forEach((t) => t.stop());
+
+        set({
+          recordingState: "processing"
+        });
+
         resolve(blob);
       };
+
       mediaRecorder.stop();
     });
   },
 
   cancelRecording: () => {
     const { mediaRecorder } = get();
-    mediaRecorder?.stream.getTracks().forEach((t) => t.stop());
-    set({ mediaRecorder: null, chunks: [], recordingState: "idle" });
+
+    mediaRecorder?.stream
+      .getTracks()
+      .forEach((t) => t.stop());
+
+    set({
+      mediaRecorder: null,
+      chunks: [],
+      recordingState: "idle"
+    });
   },
 
-  sendRecording: async (blob) => {
-  set({recordingState: "processing",error: null});
-
-  try {const response =await voiceApi.send(blob);
-    const audioBlob = new Blob(
-      [Uint8Array.from(atob(response.audio_base64),c => c.charCodeAt(0))],
-      {type: "audio/mpeg"});
-    const playbackUrl =URL.createObjectURL(audioBlob);
-    set({playbackUrl,recordingState: "idle"});
-  } catch (err) {
-    set({recordingState: "error",
-      error:
-        err instanceof Error
-          ? err.message
-          : "Voice request failed."
+  sendRecording: async (
+    blob,
+    conversationId = null
+  ) => {
+    set({
+      recordingState: "processing",
+      error: null
     });
 
+    try {
+      const response = await voiceApi.send(
+        blob,
+        conversationId
+      );
+
+      // Add user transcript to chat
+      useChatStore
+        .getState()
+        .appendMessage(
+          response.conversation_id,
+          "user",
+          response.user_message
+        );
+
+      // Add assistant reply to chat
+      useChatStore
+        .getState()
+        .appendMessage(
+          response.conversation_id,
+          "assistant",
+          response.response
+        );
+
+      // Decode MP3 from backend
+      const audioBlob = new Blob(
+        [
+          Uint8Array.from(
+            atob(response.audio_base64),
+            (c) => c.charCodeAt(0)
+          )
+        ],
+        {
+          type: "audio/mpeg"
+        }
+      );
+
+      const playbackUrl =
+        URL.createObjectURL(audioBlob);
+
+      set({
+        playbackUrl,
+        recordingState: "idle"
+      });
+    } catch (err) {
+      set({
+        recordingState: "error",
+        error:
+          err instanceof Error
+            ? err.message
+            : "Voice request failed."
+      });
+    }
   }
-}
 }));

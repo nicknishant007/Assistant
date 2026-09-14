@@ -3,6 +3,7 @@ import { apiClient } from "./client";
 export interface VoiceResponse {
   conversation_id: string;
   response: string;
+  user_message:string;
   audio_base64: string;
 }
 

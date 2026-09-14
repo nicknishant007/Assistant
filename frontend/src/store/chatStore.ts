@@ -9,10 +9,18 @@ interface ChatState {
   error: string | null;
 
   messagesFor: (conversationId: string | null) => ChatMessage[];
+
+  appendMessage: (
+    conversationId: string,
+    role: "user" | "assistant",
+    content: string
+  ) => void;
+
   sendMessage: (
     conversationId: string | null,
     text: string
   ) => Promise<{ conversationId: string }>;
+
   reset: (conversationId: string) => void;
 }
 
@@ -26,7 +34,30 @@ export const useChatStore = create<ChatState>((set, get) => ({
   error: null,
 
   messagesFor: (conversationId) =>
-    conversationId ? get().messagesByConversation[conversationId] ?? [] : [],
+    conversationId
+      ? get().messagesByConversation[conversationId] ?? []
+      : [],
+
+  appendMessage: (
+    conversationId,
+    role,
+    content
+  ) =>
+    set((state) => ({
+      messagesByConversation: {
+        ...state.messagesByConversation,
+        [conversationId]: [
+          ...(state.messagesByConversation[conversationId] ?? []),
+          {
+            id: tempId(),
+            conversationId,
+            role,
+            content,
+            createdAt: new Date().toISOString()
+          }
+        ]
+      }
+    })),
 
   sendMessage: async (conversationId, text) => {
     const draftKey = conversationId ?? "__draft__";
@@ -42,23 +73,21 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set((state) => ({
       messagesByConversation: {
         ...state.messagesByConversation,
-        [draftKey]: [...(state.messagesByConversation[draftKey] ?? []), userMessage]
+        [draftKey]: [
+          ...(state.messagesByConversation[draftKey] ?? []),
+          userMessage
+        ]
       },
       isAssistantTyping: true,
       error: null
     }));
 
     try {
-      const res = await chatApi.send(text, conversationId);
+      const res = await chatApi.send(
+        text,
+        conversationId
+      );
 
-      // TODO(backend): ChatResponse today is `{ conversation_id, response }`
-      // — approval_message / pending_question / errors from AgentState all
-      // collapse into `response` as plain text (see chat_service.py).
-      // Once the backend returns a `kind` field (e.g. "approval" |
-      // "clarification" | "text") this is where we'd build an
-      // ApprovalCardData / ClarificationCardData instead of a plain
-      // ChatMessage, so ApprovalCard/ClarificationCard get real data
-      // rather than being demoed with mock props.
       const assistantMessage: ChatMessage = {
         id: tempId(),
         conversationId: res.conversation_id,
@@ -68,49 +97,79 @@ export const useChatStore = create<ChatState>((set, get) => ({
       };
 
       set((state) => {
-        const priorDraft = state.messagesByConversation[draftKey] ?? [];
-        const merged = draftKey === res.conversation_id
-          ? priorDraft
-          : priorDraft.map((m) => ({ ...m, conversationId: res.conversation_id }));
+        const priorDraft =
+          state.messagesByConversation[draftKey] ?? [];
+
+        const merged =
+          draftKey === res.conversation_id
+            ? priorDraft
+            : priorDraft.map((m) => ({
+                ...m,
+                conversationId:
+                  res.conversation_id
+              }));
 
         const existing =
           draftKey === res.conversation_id
             ? []
-            : state.messagesByConversation[res.conversation_id] ?? [];
+            : state.messagesByConversation[
+                res.conversation_id
+              ] ?? [];
 
-        const rest = { ...state.messagesByConversation };
+        const rest = {
+          ...state.messagesByConversation
+        };
+
         delete rest[draftKey];
 
         return {
           messagesByConversation: {
             ...rest,
-            [res.conversation_id]: [...existing, ...merged, assistantMessage]
+            [res.conversation_id]: [
+              ...existing,
+              ...merged,
+              assistantMessage
+            ]
           },
           isAssistantTyping: false
         };
       });
 
-      useConversationStore.getState().upsertLocal({
-        id: res.conversation_id,
-        title: text.slice(0, 50),
-        updatedAt: new Date().toISOString()
-      });
+      useConversationStore
+        .getState()
+        .upsertLocal({
+          id: res.conversation_id,
+          title: text.slice(0, 50),
+          updatedAt: new Date().toISOString()
+        });
 
-      return { conversationId: res.conversation_id };
+      return {
+        conversationId:
+          res.conversation_id
+      };
     } catch (err) {
       set({
         isAssistantTyping: false,
         error:
-          err instanceof Error ? err.message : "Failed to reach NuroFlow."
+          err instanceof Error
+            ? err.message
+            : "Failed to reach NuroFlow."
       });
+
       throw err;
     }
   },
 
   reset: (conversationId) =>
     set((state) => {
-      const rest = { ...state.messagesByConversation };
+      const rest = {
+        ...state.messagesByConversation
+      };
+
       delete rest[conversationId];
-      return { messagesByConversation: rest };
+
+      return {
+        messagesByConversation: rest
+      };
     })
 }));
