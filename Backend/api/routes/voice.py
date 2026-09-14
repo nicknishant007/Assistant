@@ -3,7 +3,7 @@ import tempfile
 
 from fastapi import (APIRouter,Depends,UploadFile,File)
 import base64
-from fastapi import From
+from fastapi import Form
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from database.session import get_db
@@ -22,7 +22,7 @@ router = APIRouter(
 @router.post("")
 async def voice_chat(
     file: UploadFile = File(...),
-    conversation_id:str| None=From(None),
+    conversation_id:str| None=Form(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(
         get_current_user

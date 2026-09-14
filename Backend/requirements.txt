@@ -11,3 +11,7 @@ authlib
 python-jose
 faster-whisper
 edge-tts
+langchain
+langgtaph
+google_genai
+python-multipart
