@@ -101,10 +101,8 @@ export const useVoiceStore = create<VoiceState>((set, get) => ({
     });
   },
 
-  sendRecording: async (
-    blob,
-    conversationId = null
-  ) => {
+  sendRecording: async (blob,conversationId = null) => {
+    console.log("VOICE BLOB",blob);
     set({
       recordingState: "processing",
       error: null

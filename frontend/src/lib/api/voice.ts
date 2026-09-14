@@ -12,7 +12,7 @@ export const voiceApi = {
     audioBlob: Blob,
     conversationId?: string | null
   ): Promise<VoiceResponse> {
-
+    console.log("Sending Blob:", audioBlob);
     const form = new FormData();
 
     form.append(
@@ -20,6 +20,10 @@ export const voiceApi = {
       audioBlob,
       "recording.webm"
     );
+    console.log("FORM ENTRIES:");
+    for (const pair of form.entries()) {
+      console.log(pair[0], pair[1]);
+    }
 
     if (conversationId) {
       form.append(

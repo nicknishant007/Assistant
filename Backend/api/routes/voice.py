@@ -28,6 +28,8 @@ async def voice_chat(
         get_current_user
     )
 ):
+    print("VOICE HIT")
+    print(file.filename)
 
     # -------------------------
     # Save Upload Temporarily
