@@ -2,7 +2,8 @@ import os
 import tempfile
 
 from fastapi import (APIRouter,Depends,UploadFile,File)
-
+import base64
+from fastapi import From
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from database.session import get_db
@@ -21,6 +22,7 @@ router = APIRouter(
 @router.post("")
 async def voice_chat(
     file: UploadFile = File(...),
+    conversation_id:str| None=From(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(
         get_current_user
@@ -57,6 +59,7 @@ async def voice_chat(
     result = chat_service(
         db=db,
         user_id=current_user.id,
+        conversation_id=conversation_id,
         message=user_message
     )
 
@@ -72,12 +75,15 @@ async def voice_chat(
     # Cleanup Input Audio
     # -------------------------
 
-    os.remove(
-        temp_audio.name
-    )
+    with open(audio_path, "rb") as f:
+        audio_base64 = base64.b64encode(
+            f.read()
+        ).decode()
 
-    return FileResponse(
-        path=audio_path,
-        media_type="audio/mpeg",
-        filename="response.mp3"
-    )
+    os.remove(audio_path)
+
+    return {
+        "conversation_id": result.conversation_id,
+        "response": result.response,
+        "audio_base64": audio_base64
+    }

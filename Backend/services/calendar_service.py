@@ -272,9 +272,7 @@ def find_event_by_title(
     resolved_day = None
 
     if date:
-        resolved_date = resolve_day_of_month(
-            int(date)
-        )
+        resolved_date = datetime.fromisoformat(date).date().isoformat()
 
     if day:
         resolved_day = (

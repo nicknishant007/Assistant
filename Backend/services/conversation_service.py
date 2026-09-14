@@ -22,13 +22,15 @@ def create_conversation(
 
 def get_conversation(
     db,
-    conversation_id: str
+    conversation_id: str,
+    user_id:str
 ):
 
     return (
         db.query(AgentConversation)
         .filter(
-            AgentConversation.id == conversation_id
+            AgentConversation.id == conversation_id,
+            AgentConversation.user_id==user_id
         )
         .first()
     )
@@ -72,9 +74,9 @@ def get_recent_messages(
 
 def get_messages(
         db,
-        converstion_id: str
+        conversation_id: str
 ):
     messages=(db.query(ConversationMessage)
-              .filter(ConversationMessage.conversation_id==converstion_id)
+              .filter(ConversationMessage.conversation_id==conversation_id)
               .order_by(ConversationMessage.created_at.asc()).all())
     return messages

@@ -46,7 +46,7 @@ export const useVoiceStore = create<VoiceState>((set, get) => ({
 
     return new Promise((resolve) => {
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunks, { type: "audio/wav" });
+        const blob = new Blob(chunks, { type: mediaRecorder.mimeType || "audio/wevm" });
         mediaRecorder.stream.getTracks().forEach((t) => t.stop());
         set({ recordingState: "processing" });
         resolve(blob);
@@ -62,16 +62,22 @@ export const useVoiceStore = create<VoiceState>((set, get) => ({
   },
 
   sendRecording: async (blob) => {
-    set({ recordingState: "processing", error: null });
-    try {
-      const audioResponse = await voiceApi.send(blob);
-      const playbackUrl = URL.createObjectURL(audioResponse);
-      set({ playbackUrl, recordingState: "idle" });
-    } catch (err) {
-      set({
-        recordingState: "error",
-        error: err instanceof Error ? err.message : "Voice request failed."
-      });
-    }
+  set({recordingState: "processing",error: null});
+
+  try {const response =await voiceApi.send(blob);
+    const audioBlob = new Blob(
+      [Uint8Array.from(atob(response.audio_base64),c => c.charCodeAt(0))],
+      {type: "audio/mpeg"});
+    const playbackUrl =URL.createObjectURL(audioBlob);
+    set({playbackUrl,recordingState: "idle"});
+  } catch (err) {
+    set({recordingState: "error",
+      error:
+        err instanceof Error
+          ? err.message
+          : "Voice request failed."
+    });
+
   }
+}
 }));
