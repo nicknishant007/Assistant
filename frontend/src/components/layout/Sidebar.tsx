@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { Plus, MessageSquare, Calendar, Settings, LogOut, Search, X } from "lucide-react";
+import { Plus, MessageSquare, Calendar, Settings, LogOut, Search, X, Home, User, SlidersHorizontal } from "lucide-react";
+
 import { useConversationStore } from "@/store/conversationStore";
 import { useAuthStore } from "@/store/authStore";
 import { useUiStore } from "@/store/uiStore";
@@ -122,8 +123,11 @@ export function Sidebar() {
         </ul>
       </nav>
 
-      <div className="space-y-1 border-t-3 border-ink p-4">
+        <div className="space-y-1 border-t-3 border-ink p-4">
+        <SidebarLink href="/home" icon={<Home size={18} />} label="Home" active={pathname === "/home"} />
         <SidebarLink href="/calendar" icon={<Calendar size={18} />} label="Calendar" active={pathname === "/calendar"} />
+        <SidebarLink href="/profile" icon={<User size={18} />} label="Profile" active={pathname === "/profile"} />
+        <SidebarLink href="/preferences" icon={<SlidersHorizontal size={18} />} label="Preferences" active={pathname === "/preferences"} />
         <SidebarLink href="/settings" icon={<Settings size={18} />} label="Settings" active={pathname === "/settings"} />
         <button
           onClick={() => logout()}

@@ -9,6 +9,8 @@ from api.routes.scheduler import router as scheduler_router
 from api.routes.chat import router as chat_router
 from api.routes.voice import router as voice_router
 from api.routes.conversations import router as conversations_router
+from api.routes.profile import router as profile_router
+from api.routes.preferences import router as preferences_router
 
 app = FastAPI(
     title="AI Executive Assistant",
@@ -39,6 +41,9 @@ app.include_router(chat_router)
 app.include_router(scheduler_router)
 app.include_router(voice_router)
 app.include_router(conversations_router)
+app.include_router(profile_router)
+app.include_router(preferences_router)
+
 @app.get("/")
 async def root():
     return {

@@ -97,7 +97,7 @@ async def callback_google(
             "email": user.email
         }
     )
-    response=RedirectResponse(url=f"{settings.FRONTEND_URL}/chat")
+    response=RedirectResponse(url=f"{settings.FRONTEND_URL}/home")
     response.set_cookie(
         key="access_token",
         value=access_token,

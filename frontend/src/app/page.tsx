@@ -13,7 +13,7 @@ export default function RootPage() {
   }, [hydrate]);
 
   useEffect(() => {
-    if (status === "authenticated") router.replace("/chat");
+    if (status === "authenticated") router.replace("/home");
     if (status === "unauthenticated") router.replace("/login");
   }, [status, router]);
 

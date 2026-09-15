@@ -82,3 +82,34 @@ export interface UpdateEventInput extends Partial<CreateEventInput> {
 // ---- Voice ---------------------------------------------------------------
 
 export type RecordingState = "idle" | "recording" | "processing" | "error";
+
+// ---- Profile ------------------------------------------------------------
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  full_name: string | null;
+  profile_picture: string | null;
+}
+
+export interface ProfileUpdateInput {
+  full_name?: string;
+  profile_picture?: string;
+}
+
+// ---- Preferences ----------------------------------------------------------
+// Mirrors Backend/database/models/user_preference.py — no invented fields.
+
+export interface UserPreferences {
+  wake_time: string | null; // "HH:MM:SS"
+  sleep_time: string | null;
+  work_start_time: string | null;
+  focus_duration: number; // minutes
+}
+
+export interface PreferencesUpdateInput {
+  wake_time?: string;
+  sleep_time?: string;
+  work_start_time?: string;
+  focus_duration?: number;
+}

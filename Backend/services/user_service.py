@@ -42,4 +42,23 @@ def create_user(
     return user
 
 
+def update_user(
+    db: Session,
+    user: User,
+    full_name: str | None = None,
+    profile_picture: str | None = None
+):
+    """Partial update of the authenticated user's own profile."""
 
+    if full_name is not None:
+        user.full_name = full_name
+
+    if profile_picture is not None:
+        user.profile_picture = profile_picture
+
+    user.updated_at = datetime.utcnow()
+
+    db.commit()
+    db.refresh(user)
+
+    return user
