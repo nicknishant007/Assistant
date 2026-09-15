@@ -10,9 +10,18 @@ import { Card } from "@/components/ui/Card";
 
 export function ChatWindow({ conversationId }: { conversationId: string | null }) {
   const router = useRouter();
-  const { messagesFor, sendMessage, isAssistantTyping, error } = useChatStore();
+  const { messagesFor, sendMessage, isAssistantTyping, error, loadConversation } = useChatStore();
   const messages = messagesFor(conversationId ?? "__draft__");
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // Hydrate history when opening an existing conversation (e.g. from the
+  // sidebar, or after a page refresh) — messagesByConversation only has
+  // data for conversations touched in the current session otherwise.
+  useEffect(() => {
+    if (conversationId) {
+      loadConversation(conversationId);
+    }
+  }, [conversationId, loadConversation]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
