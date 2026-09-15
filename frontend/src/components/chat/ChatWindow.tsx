@@ -25,6 +25,12 @@ export function ChatWindow({ conversationId }: { conversationId: string | null }
     }
   }
 
+  function handleVoiceSent(newConversationId?: string) {
+    if (!conversationId && newConversationId) {
+      router.push(`/chat/${newConversationId}`);
+    }
+  }
+
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -42,7 +48,12 @@ export function ChatWindow({ conversationId }: { conversationId: string | null }
           <div ref={bottomRef} />
         </div>
       </div>
-      <ChatInput onSend={handleSend} disabled={isAssistantTyping} />
+      <ChatInput
+        onSend={handleSend}
+        onVoiceSent={handleVoiceSent}
+        disabled={isAssistantTyping}
+        conversationId={conversationId}
+      />
     </div>
   );
 }

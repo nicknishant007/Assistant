@@ -10,7 +10,13 @@ import { cn } from "@/lib/utils/cn";
  * recording (CSS-only — no analyser node needed for the visual) and swaps
  * to a spinner while the backend transcribes + responds.
  */
-export function VoiceRecorder({ onSent }: { onSent?: () => void }) {
+export function VoiceRecorder({
+  conversationId,
+  onSent
+}: {
+  conversationId?: string | null;
+  onSent?: (conversationId?: string) => void;
+}) {
   const { recordingState, startRecording, stopRecording, cancelRecording, sendRecording, error } =
     useVoiceStore();
 
@@ -46,8 +52,8 @@ export function VoiceRecorder({ onSent }: { onSent?: () => void }) {
           onClick={async () => {
             const blob = await stopRecording();
             if (blob) {
-              await sendRecording(blob);
-              onSent?.();
+              const result = await sendRecording(blob, conversationId ?? null);
+              onSent?.(result?.conversationId);
             }
           }}
           className="text-ink"

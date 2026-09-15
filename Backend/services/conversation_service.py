@@ -80,3 +80,21 @@ def get_messages(
               .filter(ConversationMessage.conversation_id==conversation_id)
               .order_by(ConversationMessage.created_at.asc()).all())
     return messages
+
+
+def get_user_conversations(db, user_id: str):
+    return (
+        db.query(AgentConversation)
+        .filter(AgentConversation.user_id == user_id)
+        .order_by(AgentConversation.updated_at.desc())
+        .all()
+    )
+
+def delete_conversation(db, conversation_id: str):
+    db.query(ConversationMessage).filter(
+        ConversationMessage.conversation_id == conversation_id
+    ).delete()
+    db.query(AgentConversation).filter(
+        AgentConversation.id == conversation_id
+    ).delete()
+    db.commit()

@@ -13,7 +13,8 @@ interface ChatState {
   appendMessage: (
     conversationId: string,
     role: "user" | "assistant",
-    content: string
+    content: string,
+    audioUrl?:string
   ) => void;
 
   sendMessage: (
@@ -41,7 +42,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
   appendMessage: (
     conversationId,
     role,
-    content
+    content,
+    audioUrl
   ) =>
     set((state) => ({
       messagesByConversation: {
@@ -53,7 +55,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
             conversationId,
             role,
             content,
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            audioUrl:audioUrl ?? null
           }
         ]
       }

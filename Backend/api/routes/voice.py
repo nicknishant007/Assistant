@@ -69,7 +69,7 @@ async def voice_chat(
     # Text -> Speech
     # -------------------------
 
-    audio_path = text_to_speech(
+    audio_path = await text_to_speech(
         result.response
     )
 

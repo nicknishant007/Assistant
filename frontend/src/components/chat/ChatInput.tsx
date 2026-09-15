@@ -8,10 +8,14 @@ import { VoiceRecorder } from "@/components/voice/VoiceRecorder";
 
 export function ChatInput({
   onSend,
-  disabled
+  onVoiceSent,
+  disabled,
+  conversationId
 }: {
   onSend: (text: string) => void;
+  onVoiceSent?: (conversationId?: string) => void;
   disabled?: boolean;
+  conversationId?: string | null;
 }) {
   const [value, setValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -41,7 +45,7 @@ export function ChatInput({
             }
           }}
         />
-        <VoiceRecorder />
+        <VoiceRecorder conversationId={conversationId} onSent={onVoiceSent} />
         <IconButton
           aria-label="Send message"
           tone="mint"

@@ -1,13 +1,12 @@
-import asyncio
 import tempfile
-
 import edge_tts
 
 
-async def _generate_audio(
-    text: str,
-    output_path: str
-):
+async def text_to_speech(text: str) -> str:
+    temp_file = tempfile.NamedTemporaryFile(
+        suffix=".mp3",
+        delete=False
+    )
 
     communicate = edge_tts.Communicate(
         text=text,
@@ -15,24 +14,7 @@ async def _generate_audio(
     )
 
     await communicate.save(
-        output_path
-    )
-
-
-def text_to_speech(
-    text: str
-) -> str:
-
-    temp_file = tempfile.NamedTemporaryFile(
-        suffix=".mp3",
-        delete=False
-    )
-
-    asyncio.run(
-        _generate_audio(
-            text,
-            temp_file.name
-        )
+        temp_file.name
     )
 
     return temp_file.name

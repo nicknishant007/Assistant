@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { voiceApi } from "@/lib/api/voice";
 import type { RecordingState } from "@/types";
 import { useChatStore } from "./chatStore";
+import { useConversationStore } from "./conversationStore";
 
 interface VoiceState {
   recordingState: RecordingState;
@@ -17,7 +18,7 @@ interface VoiceState {
   sendRecording: (
     blob: Blob,
     conversationId?: string | null
-  ) => Promise<void>;
+  ) => Promise<{ conversationId: string } | void>;
 }
 
 export const useVoiceStore = create<VoiceState>((set, get) => ({
@@ -51,8 +52,7 @@ export const useVoiceStore = create<VoiceState>((set, get) => ({
     } catch {
       set({
         recordingState: "error",
-        error:
-          "Microphone permission was denied or is unavailable."
+        error: "Microphone permission was denied or is unavailable."
       });
     }
   },
@@ -67,18 +67,12 @@ export const useVoiceStore = create<VoiceState>((set, get) => ({
     return new Promise((resolve) => {
       mediaRecorder.onstop = () => {
         const blob = new Blob(chunks, {
-          type:
-            mediaRecorder.mimeType ||
-            "audio/webm"
+          type: mediaRecorder.mimeType || "audio/webm"
         });
 
-        mediaRecorder.stream
-          .getTracks()
-          .forEach((t) => t.stop());
+        mediaRecorder.stream.getTracks().forEach((t) => t.stop());
 
-        set({
-          recordingState: "processing"
-        });
+        set({ recordingState: "processing" });
 
         resolve(blob);
       };
@@ -90,9 +84,7 @@ export const useVoiceStore = create<VoiceState>((set, get) => ({
   cancelRecording: () => {
     const { mediaRecorder } = get();
 
-    mediaRecorder?.stream
-      .getTracks()
-      .forEach((t) => t.stop());
+    mediaRecorder?.stream.getTracks().forEach((t) => t.stop());
 
     set({
       mediaRecorder: null,
@@ -101,64 +93,60 @@ export const useVoiceStore = create<VoiceState>((set, get) => ({
     });
   },
 
-  sendRecording: async (blob,conversationId = null) => {
-    console.log("VOICE BLOB",blob);
-    set({
-      recordingState: "processing",
-      error: null
-    });
+  sendRecording: async (blob, conversationId = null) => {
+    set({ recordingState: "processing", error: null });
 
     try {
-      const response = await voiceApi.send(
-        blob,
-        conversationId
+      const response = await voiceApi.send(blob, conversationId);
+
+      // Decode MP3 from backend FIRST so we can attach it to the assistant message
+      const audioBlob = new Blob(
+        [
+          Uint8Array.from(atob(response.audio_base64), (c) =>
+            c.charCodeAt(0)
+          )
+        ],
+        { type: "audio/mpeg" }
       );
+      const playbackUrl = URL.createObjectURL(audioBlob);
 
       // Add user transcript to chat
       useChatStore
         .getState()
-        .appendMessage(
-          response.conversation_id,
-          "user",
-          response.user_message
-        );
+        .appendMessage(response.conversation_id, "user", response.user_message);
 
-      // Add assistant reply to chat
+      // Add assistant reply WITH the audio attached, so MessageBubble shows a play button
       useChatStore
         .getState()
         .appendMessage(
           response.conversation_id,
           "assistant",
-          response.response
+          response.response,
+          playbackUrl
         );
 
-      // Decode MP3 from backend
-      const audioBlob = new Blob(
-        [
-          Uint8Array.from(
-            atob(response.audio_base64),
-            (c) => c.charCodeAt(0)
-          )
-        ],
-        {
-          type: "audio/mpeg"
-        }
-      );
+      useConversationStore.getState().upsertLocal({
+        id: response.conversation_id,
+        title: response.user_message.slice(0, 50),
+        updatedAt: new Date().toISOString()
+      });
 
-      const playbackUrl =
-        URL.createObjectURL(audioBlob);
+      useConversationStore.getState().setActive(response.conversation_id);
 
       set({
         playbackUrl,
         recordingState: "idle"
       });
+
+      // Autoplay the reply once (browsers may block this silently — the
+      // message's own play button in MessageBubble is the reliable fallback)
+      new Audio(playbackUrl).play().catch(() => {});
+
+      return { conversationId: response.conversation_id };
     } catch (err) {
       set({
         recordingState: "error",
-        error:
-          err instanceof Error
-            ? err.message
-            : "Voice request failed."
+        error: err instanceof Error ? err.message : "Voice request failed."
       });
     }
   }
