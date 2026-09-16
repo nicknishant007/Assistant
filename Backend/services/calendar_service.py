@@ -5,6 +5,11 @@ from googleapiclient.discovery import build
 from config.settings import settings
 
 from services.integration_service import (get_google_integration)
+from services.cache_service import (
+    get_cached_events,
+    set_cached_events,
+    refresh_events_cache
+)
 from datetime import datetime,timezone,timedelta
 from utils.date_resolver import resolve_day_name,resolve_day_of_month
 
@@ -44,20 +49,25 @@ def build_calendar_service(
     service = build(
         "calendar",
         "v3",
-        credentials=credentials
+        credentials=credentials,
+        static_discovery=True,
+        cache_discovery=False
     )
 
     return service
 
-def get_events(
+#redis
+def fetch_events_live(
         db,
-        user_id:str,
-        max_results:int=100):
-    service=build_calendar_service(
+        user_id: str,
+        max_results: int = 100):
+
+    service = build_calendar_service(
         db=db,
         user_id=user_id
-)
-    events=(
+    )
+
+    events = (
         service.events().list(
             calendarId="primary",
             timeMin=datetime.now(
@@ -67,7 +77,31 @@ def get_events(
                 orderBy="startTime"
             ).execute()
         )
-    return events.get("items",[])
+
+    return events.get("items", [])
+
+
+##GET EVENTS — cache-first, falls back to live fetch on miss
+def get_events(
+        db,
+        user_id: str,
+        max_results: int = 100):
+
+    cached = get_cached_events(user_id)
+
+    if cached is not None:
+        return cached[:max_results]
+
+    events = fetch_events_live(
+        db=db,
+        user_id=user_id,
+        max_results=max_results
+    )
+
+    set_cached_events(user_id, events)
+
+    return events
+
 
 ##creat event  
 def create_event(
@@ -107,6 +141,10 @@ def create_event(
         )
         .execute()
     )
+
+    # Refresh cache so the very next read (validator step, frontend
+    # poll, next chat turn) sees this event without hitting Google.
+    refresh_events_cache(db=db, user_id=user_id)
 
     return {
         "success":True,
@@ -158,6 +196,11 @@ def update_event(
     print("event_id =", event_id)
     print("start_time =", start_time)
     print("end_time =", end_time)
+
+    # Refresh cache — reschedule changed the data, next find/get must
+    # not read the stale pre-reschedule version.
+    refresh_events_cache(db=db, user_id=user_id)
+
     return{
         "success":True,
         "event":updated_event
@@ -179,6 +222,10 @@ def delete_event(
         calendarId="primary",
         eventId=event_id
     ).execute()
+
+    # Refresh cache — deleted event must not still show up in the
+    # cached list for the next 4 minutes.
+    refresh_events_cache(db=db, user_id=user_id)
 
     return {
         "success":True,
@@ -250,7 +297,8 @@ def get_events_range(
 
 
 # FIND EVENT BY TITLE
-
+# NOTE: unchanged — it calls get_events() above, so it automatically
+# reads from cache now. No edits needed here.
 
 def find_event_by_title(
     db,
