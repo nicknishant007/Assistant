@@ -1,10 +1,16 @@
 from  datetime import datetime,timedelta
 from services.preference_service import (get_user_preferences)
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
 
 from services.calendar_service import (build_calendar_service,get_day_events,create_event,get_events_range
                                        ,update_event,delete_event)
 
+
+IST = ZoneInfo("Asia/Kolkata")
 #Helper
+
 
 def to_iso(value):
 
@@ -12,6 +18,10 @@ def to_iso(value):
         return value
 
     if isinstance(value, datetime):
+
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=IST)
+
         return value.isoformat()
 
     raise ValueError(
@@ -300,17 +310,14 @@ def find_next_available_day(
 
     return None
 
-#Date and Time Normalizer
+
 def normalize_datetimes(
     start_datetime=None,
     end_datetime=None,
     date=None,
     start_time=None,
-    end_time=None
+    end_time=None,
 ):
-    if isinstance(date, str):
-        date = datetime.fromisoformat(date).date()
-
     """
     Supports either:
 
@@ -321,36 +328,55 @@ def normalize_datetimes(
 
     2.
     date + start_time + end_time
+
+    Returns RFC3339 compatible datetime strings.
     """
 
+    # Case 1: full datetimes provided
     if start_datetime and end_datetime:
+
+        if isinstance(start_datetime, str):
+            start_datetime = datetime.fromisoformat(start_datetime)
+
+        if isinstance(end_datetime, str):
+            end_datetime = datetime.fromisoformat(end_datetime)
+
+        if start_datetime.tzinfo is None:
+            start_datetime = start_datetime.replace(tzinfo=IST)
+
+        if end_datetime.tzinfo is None:
+            end_datetime = end_datetime.replace(tzinfo=IST)
+
         return (
-            start_datetime,
-            end_datetime
+            start_datetime.isoformat(),
+            end_datetime.isoformat(),
         )
 
+    # Case 2: date + times provided
     if date and start_time and end_time:
 
-        start_datetime = (
-            f"{date}T{start_time}"
-        )
+        if isinstance(date, str):
+            date = datetime.fromisoformat(date).date()
 
-        end_datetime = (
+        start_datetime = datetime.fromisoformat(
+            f"{date}T{start_time}"
+        ).replace(tzinfo=IST)
+
+        end_datetime = datetime.fromisoformat(
             f"{date}T{end_time}"
-        )
+        ).replace(tzinfo=IST)
 
         return (
-            start_datetime,
-            end_datetime
+            start_datetime.isoformat(),
+            end_datetime.isoformat(),
         )
 
     raise ValueError(
         "Provide either "
-        "(start_datetime,end_datetime) "
+        "(start_datetime, end_datetime) "
         "or "
-        "(date,start_time,end_time)"
+        "(date, start_time, end_time)"
     )
-
 #Reschedule Task
 def reschedule_event(
     db,

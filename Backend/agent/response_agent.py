@@ -25,7 +25,7 @@ def response_agent(
             ("user", state.user_query)
         ]
     )
-
+    print(response)
     content = (
         response.content
         if hasattr(response, "content")

@@ -1,7 +1,7 @@
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
-
+from traceback import print_exc
 from config.settings import settings
 
 from services.integration_service import (get_google_integration)
@@ -182,21 +182,33 @@ def update_event(
             "timeZone": "Asia/Kolkata"
         }
     }
-
-    updated_event=(
-        service.events()
-        .update(
-            calendarId="primary",
-            eventId=event_id,
-            body=event
-        )
-        .execute()
-    )
     print("UPDATE EVENT CALLED")
     print("event_id =", event_id)
     print("start_time =", start_time)
     print("end_time =", end_time)
 
+    
+
+    try:
+        updated_event = (
+            service.events()
+            .update(
+                calendarId="primary",
+                eventId=event_id,
+                body=event
+            )
+            .execute()
+        )
+
+    except Exception as e:
+        print("UPDATE FAILED")
+        print(type(e))
+        print(e)
+        print_exc()
+        raise
+
+   
+   
     # Refresh cache — reschedule changed the data, next find/get must
     # not read the stale pre-reschedule version.
     refresh_events_cache(db=db, user_id=user_id)

@@ -39,7 +39,7 @@ def executor_agent(
 ) -> AgentState:
 
     workflow = state.workflow
-
+    print(workflow)
     # --------------------------------------------------
     # NO WORKFLOW
     # --------------------------------------------------
@@ -80,14 +80,18 @@ def executor_agent(
     # --------------------------------------------------
     # RESOLVE PLACEHOLDERS
     # --------------------------------------------------
-
+    print("\n========== EXECUTOR ==========")
+    print("STEP ID:", step_id)
+    print("TOOL:", tool_name)
+    print("RAW PARAMS:", params)
+    print("STEP RESULTS:", state.step_results)
     try:
 
         resolved_params = resolve(
             params,
             state.step_results
         )
-
+        print("RESOLVED PARAMS:", resolved_params)
     except Exception as e:
 
         state.error = (
@@ -205,6 +209,9 @@ def executor_agent(
     # --------------------------------------------------
     # WORKFLOW FINISHED
     # --------------------------------------------------
+
+    print("TOOL:",tool)
+    print("RESULT:",result)
 
     state.next_step = "validator"
     state.next_agent = "validator"

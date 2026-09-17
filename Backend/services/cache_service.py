@@ -11,7 +11,8 @@ redis_client = redis.from_url(
 )
 
 DEFAULT_TTL_SECONDS = 240  
-
+print("PING:", redis_client.ping())
+print("VERSION:", redis_client.info()["redis_version"])
 
 def _events_key(user_id: str) -> str:
     return f"calendar:events:{user_id}"
