@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     MISTRAL_API_KEY: str
     MISTRAL_MODEL: str="mistral-small-latest"
     FRONTEND_URL:str ="http://localhost:3000"
-    REDIS_URL:str="redis://localhost:6379:6379/0"
+    REDIS_URL:str="redis://localhost:6379/0"
     model_config = SettingsConfigDict(
         env_file=".env",
         extra="ignore"
