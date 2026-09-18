@@ -58,9 +58,11 @@ def build_calendar_service(
 
 #redis
 def fetch_events_live(
-        db,
-        user_id: str,
-        max_results: int = 100):
+    db,
+    user_id: str,
+    max_results: int = 100
+):
+    print(f"[GOOGLE API] Fetching events for user={user_id}")
 
     service = build_calendar_service(
         db=db,
@@ -71,26 +73,35 @@ def fetch_events_live(
         service.events().list(
             calendarId="primary",
             timeMin=datetime.now(
-                timezone.utc).isoformat(),
-                maxResults=max_results,
-                singleEvents=True,
-                orderBy="startTime"
-            ).execute()
-        )
+                timezone.utc
+            ).isoformat(),
+            maxResults=max_results,
+            singleEvents=True,
+            orderBy="startTime"
+        ).execute()
+    )
 
     return events.get("items", [])
 
-
 ##GET EVENTS — cache-first, falls back to live fetch on miss
 def get_events(
-        db,
-        user_id: str,
-        max_results: int = 100):
+    db,
+    user_id: str,
+    max_results: int = 100
+):
 
     cached = get_cached_events(user_id)
 
     if cached is not None:
+        print(
+            f"[REDIS HIT] user={user_id} "
+            f"events={len(cached)}"
+        )
         return cached[:max_results]
+
+    print(
+        f"[REDIS MISS] user={user_id}"
+    )
 
     events = fetch_events_live(
         db=db,
@@ -98,10 +109,17 @@ def get_events(
         max_results=max_results
     )
 
-    set_cached_events(user_id, events)
+    set_cached_events(
+        user_id=user_id,
+        events=events
+    )
+
+    print(
+        f"[REDIS SET] user={user_id} "
+        f"events={len(events)}"
+    )
 
     return events
-
 
 ##creat event  
 def create_event(
