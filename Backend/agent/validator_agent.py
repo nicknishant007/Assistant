@@ -1,5 +1,5 @@
 from agent.state import AgentState
-
+from langsmith import traceable
 
 MUTATION_TOOLS = {
     "schedule_task_auto",
@@ -8,7 +8,7 @@ MUTATION_TOOLS = {
     "delete_task"
 }
 
-
+@traceable(name="validator")
 def validator_agent(
     state: AgentState
 ) -> AgentState:

@@ -1,3 +1,4 @@
+from dotenv import load_dotenv
 from config.settings import settings
 from fastapi import FastAPI,Request
 from fastapi.responses import JSONResponse
@@ -12,6 +13,7 @@ from api.routes.conversations import router as conversations_router
 from api.routes.profile import router as profile_router
 from api.routes.preferences import router as preferences_router
 
+load_dotenv()
 app = FastAPI(
     title="AI Executive Assistant",
     version="1.0.0"

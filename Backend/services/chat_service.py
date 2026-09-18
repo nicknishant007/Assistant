@@ -1,10 +1,10 @@
 from sqlalchemy.orm import Session
 
 from schemas.chat import ChatResponse
+from langsmith import traceable
 
 from agent.state import AgentState
 from agent.graph import graph
-
 from services.conversation_service import (
     create_conversation,
     get_conversation,
@@ -12,14 +12,14 @@ from services.conversation_service import (
     get_recent_messages
 )
 
-
+@traceable(name="chat_service")
 def chat_service(
     db: Session,
     user_id: str,
     message: str,
     conversation_id: str | None = None
 ):
-
+  
     # ==========================================
     # Resolve Conversation
     # ==========================================
@@ -100,7 +100,6 @@ def chat_service(
     # ==========================================
     # Handle LangGraph Result
     # ==========================================
-
     if isinstance(result, dict):
 
         assistant_message = (

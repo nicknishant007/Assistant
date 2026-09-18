@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 from zoneinfo import ZoneInfo
-
+from langsmith import traceable
 from agent.state import AgentState
 from agent.prompt.planner_prompt import PLANNER_PROMPT
 from tools.tool_registry import get_tool_descriptions
@@ -16,7 +16,7 @@ def build_chat_history(history):
         for msg in history
     )
 
-
+@traceable(name="palnner_agent")
 def planner_agent(
     state: AgentState
 ):

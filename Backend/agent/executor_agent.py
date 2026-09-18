@@ -1,6 +1,6 @@
 from tools.tool_registry import TOOLS
 from agent.state import AgentState
-
+from langsmith import traceable
 
 def resolve(value, step_results):
 
@@ -33,7 +33,7 @@ def resolve(value, step_results):
 
     return value
 
-
+@traceable(name="excutor_agent")
 def executor_agent(
     state: AgentState
 ) -> AgentState:

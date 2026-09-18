@@ -16,3 +16,4 @@ langgtaph
 google_genai
 python-multipart
 redis
+langsmith

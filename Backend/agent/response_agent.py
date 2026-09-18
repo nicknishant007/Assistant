@@ -1,12 +1,12 @@
 from agent.prompt.response_prompt import (
     RESPONSE_PROMPT
 )
-
+from langsmith import traceable
 from agent.state import AgentState
 from agent.call_llm import llm
 from agent.utils.messages import append_message
 
-
+@traceable(name="response_agent")
 def response_agent(
     state: AgentState
 ) -> AgentState:
