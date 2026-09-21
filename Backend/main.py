@@ -12,7 +12,7 @@ from api.routes.voice import router as voice_router
 from api.routes.conversations import router as conversations_router
 from api.routes.profile import router as profile_router
 from api.routes.preferences import router as preferences_router
-
+from api.routes.notion import router as notion_router
 load_dotenv()
 app = FastAPI(
     title="AI Executive Assistant",
@@ -45,6 +45,7 @@ app.include_router(voice_router)
 app.include_router(conversations_router)
 app.include_router(profile_router)
 app.include_router(preferences_router)
+app.include_router(notion_router)
 
 @app.get("/")
 async def root():

@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     MISTRAL_MODEL: str="mistral-small-latest"
     FRONTEND_URL:str ="http://localhost:3000"
     REDIS_URL:str
+    NOTION_MCP_CLIENT_ID: str
+    NOTION_MCP_CLIENT_SECRET: str |  None=None
+    NOTION_REDIRECT_URI: str
     model_config = SettingsConfigDict(
         env_file=".env",
         extra="ignore"

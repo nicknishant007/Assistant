@@ -4,6 +4,7 @@ from config.settings import settings
 
 oauth = OAuth()
 
+# Google OAuth
 oauth.register(
     name="google",
     client_id=settings.GOOGLE_CLIENT_ID,

@@ -29,6 +29,17 @@ def get_google_integration(
     )
 
 
+def get_notion_integration(
+    db: Session,
+    user_id: str
+):
+    return get_integration(
+        db=db,
+        user_id=user_id,
+        provider="notion"
+    )
+
+
 def create_or_update_integration(
     db: Session,
     user_id: str,
@@ -43,7 +54,6 @@ def create_or_update_integration(
     )
 
     if integration:
-
         integration.access_token = access_token
 
         if refresh_token:
@@ -52,7 +62,6 @@ def create_or_update_integration(
         integration.connected = True
 
     else:
-
         integration = UserIntegration(
             user_id=user_id,
             provider=provider,
