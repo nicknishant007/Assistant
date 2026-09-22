@@ -5,7 +5,8 @@ from zoneinfo import ZoneInfo
 from langsmith import traceable
 
 from agent.state import AgentState
-from agent.prompt.planner_prompt import PLANNER_PROMPT
+from agent.prompt.notionplanner_prompt import NOTIONPLANNER_PROMPT
+from tools.notiontool_registry import get_tool_descriptions
 from agent.call_llm import llm
 from agent.utils.messages import append_message
 
@@ -13,14 +14,13 @@ from agent.utils.messages import append_message
 def build_chat_history(history):
 
     return "\n".join(
-        f"{msg.get('role', 'unknown')}: "
-        f"{msg.get('content', '')}"
+        f"{msg['role']}: {msg['content']}"
         for msg in history
     )
 
 
-@traceable(name="planner_agent")
-def planner_agent(
+@traceable(name="notion_planner_agent")
+def notion_planner_agent(
     state: AgentState
 ):
 
@@ -36,14 +36,27 @@ def planner_agent(
     # BUILD PROMPT
     # ==========================================
 
-    prompt = PLANNER_PROMPT.format(
+    prompt = NOTIONPLANNER_PROMPT.format(
+        tool_descriptions=get_tool_descriptions(),
+
         current_datetime=current_datetime.isoformat(),
+
         timezone="Asia/Kolkata",
+
         conversation_history=build_chat_history(
             state.conversation_history
         ),
+
         plan_history=state.plan_history,
-        user_feedback=state.user_feedback or ""
+
+        user_feedback=state.user_feedback or "",
+
+        context=state.context,
+
+        validation_result=(
+            state.validation_result
+            or {}
+        )
     )
 
     # ==========================================
@@ -59,8 +72,12 @@ def planner_agent(
 
     content = response.content.strip()
 
-    # Remove accidental code fences
+    # ==========================================
+    # CLEAN JSON
+    # ==========================================
+
     if content.startswith("```json"):
+
         content = (
             content
             .replace("```json", "")
@@ -69,6 +86,7 @@ def planner_agent(
         )
 
     elif content.startswith("```"):
+
         content = (
             content
             .replace("```", "")
@@ -86,12 +104,11 @@ def planner_agent(
     except Exception as e:
 
         state.error = (
-            f"Planner JSON Parse Error: {e}"
+            f"Notion Planner JSON Parse Error: {e}"
         )
 
         state.final_response = (
-            "I couldn't understand your request. "
-            "Could you please say that again?"
+            "I couldn't understand the Notion request."
         )
 
         append_message(
@@ -105,97 +122,59 @@ def planner_agent(
         return state
 
     # ==========================================
-    # SAVE PLANNER RESULT
+    # SAVE PLAN
     # ==========================================
 
     state.plan = result
 
-    state.goal = result.get(
-        "goal",
-        state.user_query
+    state.workflow = result.get(
+        "workflow",
+        []
     )
 
-    state.selected_planner = result.get(
-        "selected_planner"
+    state.approval_required = result.get(
+        "approval_required",
+        False
     )
 
-    state.pending_question = result.get(
-        "pending_question"
+    state.approval_message = result.get(
+        "approval_message"
     )
 
-    state.final_response = result.get(
-        "final_response"
-    )
+    state.current_workflow_step = 0
 
-    state.current_agent = "planner"
+    state.current_agent = "notion_planner"
 
     # ==========================================
-    # VALIDATE ROUTING
+    # CLARIFICATION QUESTION
     # ==========================================
 
-    next_agent = result.get("next_agent")
+    if result.get("pending_question"):
 
-    allowed_agents = {
-        None,
-        "calendar_planner",
-        "notion_planner"
-    }
-
-    if next_agent not in allowed_agents:
-
-        state.error = (
-            f"Invalid planner route: {next_agent}"
-        )
-
-        state.final_response = (
-            "I couldn't determine how to handle "
-            "that request."
+        state.pending_question = (
+            result["pending_question"]
         )
 
         append_message(
             state,
             "assistant",
-            state.final_response
-        )
-
-        state.next_agent = None
-
-        return state
-
-    # ==========================================
-    # CALENDAR
-    # ==========================================
-
-    if state.selected_planner == "calendar":
-
-        state.next_agent = "calendar_planner"
-
-        return state
-
-    # ==========================================
-    # NOTION
-    # ==========================================
-
-    if state.selected_planner == "notion":
-
-        state.next_agent = "notion_planner"
-
-        return state
-
-    # ==========================================
-    # UNCLEAR REQUEST
-    # ==========================================
-
-    if state.pending_question:
-
-        state.final_response = (
             state.pending_question
         )
 
+        state.next_agent = None
+
+        return state
+
+    # ==========================================
+    # APPROVAL REQUEST
+    # ==========================================
+
+    if result.get("approval_message"):
+
         append_message(
             state,
             "assistant",
-            state.final_response
+            state.approval_message
         )
 
         state.next_agent = None
@@ -203,39 +182,24 @@ def planner_agent(
         return state
 
     # ==========================================
-    # GENERAL CONVERSATION
+    # NO WORKFLOW
     # ==========================================
 
-    if state.final_response:
+    if not state.workflow:
 
-        append_message(
-            state,
-            "assistant",
-            state.final_response
+        state.goal = result.get(
+            "goal",
+            state.user_query
         )
 
-        state.next_agent = None
+        state.next_agent = "response"
 
         return state
 
     # ==========================================
-    # FALLBACK
+    # EXECUTE NOTION WORKFLOW
     # ==========================================
 
-    state.error = (
-        "Planner returned no valid action."
-    )
-
-    state.final_response = (
-        "I couldn't determine what you want me to do."
-    )
-
-    append_message(
-        state,
-        "assistant",
-        state.final_response
-    )
-
-    state.next_agent = None
+    state.next_agent = "notion_executor"
 
     return state

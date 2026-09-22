@@ -4,7 +4,6 @@ from fastapi import (
     HTTPException,
     Request,
 )
-
 from fastapi.responses import RedirectResponse
 
 from sqlalchemy.orm import Session
@@ -332,4 +331,81 @@ async def list_notion_tools(
     return {
         "count": len(tools),
         "tools": tools,
+    }
+
+@router.get("/test-tool-access")
+async def test_tool_access(
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    integration = get_notion_integration(
+        db=db,
+        user_id=current_user.id,
+    )
+
+    if not integration:
+        raise HTTPException(
+            status_code=400,
+            detail="Notion is not connected",
+        )
+
+    if not integration.connected:
+        raise HTTPException(
+            status_code=400,
+            detail="Notion integration is disconnected",
+        )
+
+    client = NotionMCPClient(
+        notion_token=integration.access_token
+    )
+
+    result = await client.call_tool(
+        tool_name="notion-get-tool-access",
+        arguments={}
+    )
+
+    if hasattr(result, "model_dump"):
+        return result.model_dump()
+
+    return {
+        "result": str(result)
+    }
+@router.get("/test-search")
+async def test_notion_search(
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    integration = get_notion_integration(
+        db=db,
+        user_id=current_user.id,
+    )
+
+    if not integration:
+        raise HTTPException(
+            status_code=400,
+            detail="Notion is not connected",
+        )
+
+    if not integration.connected:
+        raise HTTPException(
+            status_code=400,
+            detail="Notion integration is disconnected",
+        )
+
+    client = NotionMCPClient(
+        notion_token=integration.access_token
+    )
+
+    result = await client.call_tool(
+        tool_name="notion-search",
+        arguments={
+            "query": "project"
+        },
+    )
+
+    if hasattr(result, "model_dump"):
+        return result.model_dump()
+
+    return {
+        "result": str(result)
     }

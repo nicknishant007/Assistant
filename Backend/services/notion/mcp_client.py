@@ -1,6 +1,8 @@
 from mcp import ClientSession
 from mcp.client.streamable_http import streamable_http_client
+
 import httpx
+
 
 class NotionMCPClient:
 
@@ -12,7 +14,8 @@ class NotionMCPClient:
 
         async with httpx.AsyncClient(
             headers={
-                "Authorization": f"Bearer {self.notion_token}"
+                "Authorization": f"Bearer {self.notion_token}",
+                "User-Agent": "NuroFlow-MCP-Client/1.0",
             }
         ) as http_client:
 
@@ -37,12 +40,13 @@ class NotionMCPClient:
     async def call_tool(
         self,
         tool_name: str,
-        arguments: dict
+        arguments: dict,
     ):
 
         async with httpx.AsyncClient(
             headers={
-                "Authorization": f"Bearer {self.notion_token}"
+                "Authorization": f"Bearer {self.notion_token}",
+                "User-Agent": "NuroFlow-MCP-Client/1.0",
             }
         ) as http_client:
 
@@ -64,5 +68,5 @@ class NotionMCPClient:
 
                     return await session.call_tool(
                         tool_name,
-                        arguments
+                        arguments,
                     )

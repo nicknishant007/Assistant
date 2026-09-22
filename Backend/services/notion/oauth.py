@@ -177,7 +177,6 @@ async def register_mcp_client(
 
     return credentials
 
-
 def build_authorization_url(
     metadata: dict,
     client_id: str,
@@ -185,9 +184,6 @@ def build_authorization_url(
     code_challenge: str,
     state: str,
 ) -> str:
-    """
-    Build the Notion OAuth authorization URL.
-    """
 
     authorization_endpoint = metadata.get(
         "authorization_endpoint"
@@ -202,6 +198,7 @@ def build_authorization_url(
         "response_type": "code",
         "client_id": client_id,
         "redirect_uri": redirect_uri,
+        "scope": "",
         "state": state,
         "code_challenge": code_challenge,
         "code_challenge_method": "S256",
@@ -212,7 +209,6 @@ def build_authorization_url(
         f"{authorization_endpoint}"
         f"?{urlencode(params)}"
     )
-
 
 async def exchange_code_for_tokens(
     metadata: dict,
@@ -325,5 +321,40 @@ async def refresh_access_token(
                 f"{response.status_code} "
                 f"{response.text}"
             )
+
+        return response.json()
+
+
+async def introspect_access_token(
+    metadata: dict,
+    access_token: str,
+) -> dict:
+
+    introspection_endpoint = metadata.get(
+        "introspection_endpoint"
+    )
+
+    if not introspection_endpoint:
+        raise RuntimeError(
+            "Notion does not expose an introspection endpoint"
+        )
+
+    async with httpx.AsyncClient() as client:
+
+        response = await client.post(
+            introspection_endpoint,
+            data={
+                "token": access_token,
+                "token_type_hint": "access_token",
+            },
+            headers={
+                "Accept": "application/json",
+                "Content-Type": (
+                    "application/x-www-form-urlencoded"
+                ),
+            },
+        )
+
+        response.raise_for_status()
 
         return response.json()

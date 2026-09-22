@@ -9,6 +9,7 @@ class AgentState(BaseModel):
     # ==================================================
 
     user_id: Optional[str] = None
+
     db: Any = None
 
     conversation_id: Optional[str] = None
@@ -28,6 +29,8 @@ class AgentState(BaseModel):
     # ==================================================
 
     goal: Optional[str] = None
+
+    selected_planner: Optional[str] = None
 
     plan: Optional[dict] = None
 
@@ -55,15 +58,41 @@ class AgentState(BaseModel):
         Field(default_factory=dict)
     )
 
+    # --------------------------------------------------
+    # Current tool execution
+    # --------------------------------------------------
+
+    selected_tool: Optional[str] = None
+
+    tool_input: Optional[dict] = None
+
+    tool_output: Optional[Any] = None
+
+    # --------------------------------------------------
+    # Generic workflow context
+    # --------------------------------------------------
+
+    context: dict[str, Any] = (
+        Field(default_factory=dict)
+    )
+
+    # --------------------------------------------------
+    # Generated / external artifacts
+    # --------------------------------------------------
+
+    artifacts: dict[str, Any] = (
+        Field(default_factory=dict)
+    )
+
     # ==================================================
-# EXECUTOR ROUTING
-# ==================================================
+    # EXECUTOR ROUTING
+    # ==================================================
 
     next_step: Optional[str] = None
 
-# ==================================================
-# APPROVAL FLAGS
-# ==================================================
+    # ==================================================
+    # APPROVAL FLAGS
+    # ==================================================
 
     approval_required: bool = False
 
@@ -98,23 +127,28 @@ class AgentState(BaseModel):
     # ==================================================
 
     approval: dict = (
-        Field(default_factory=lambda: {
-            "pending": False,
-            "type": None,
-            "step_id": None,
-            "message": None,
-            "data": None,
-            "status": None
-        })
+        Field(
+            default_factory=lambda: {
+                "pending": False,
+                "type": None,
+                "step_id": None,
+                "message": None,
+                "data": None,
+                "status": None
+            }
+        )
     )
 
-    # approval types:
+    # approval types can include:
     #
     # event_selection
     # slot_selection
     # delete_confirmation
     # update_confirmation
     # schedule_confirmation
+    # notion_update_confirmation
+    # notion_create_confirmation
+    # etc.
 
     # ==================================================
     # CLARIFICATION
