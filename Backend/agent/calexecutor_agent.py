@@ -2,6 +2,7 @@ from tools.caltool_registry import TOOLS
 from agent.state import AgentState
 from langsmith import traceable
 
+
 def resolve(value, step_results):
 
     if isinstance(value, dict):
@@ -33,13 +34,16 @@ def resolve(value, step_results):
 
     return value
 
-@traceable(name="excutor_agent")
+
+@traceable(name="executor_agent")
 def cal_executor_agent(
     state: AgentState
 ) -> AgentState:
 
     workflow = state.workflow
+
     print(workflow)
+
     # --------------------------------------------------
     # NO WORKFLOW
     # --------------------------------------------------
@@ -80,18 +84,25 @@ def cal_executor_agent(
     # --------------------------------------------------
     # RESOLVE PLACEHOLDERS
     # --------------------------------------------------
-    print("\n========== EXECUTOR ==========")
+
+    print("\n========== CALENDAR EXECUTOR ==========")
     print("STEP ID:", step_id)
     print("TOOL:", tool_name)
     print("RAW PARAMS:", params)
     print("STEP RESULTS:", state.step_results)
+
     try:
 
         resolved_params = resolve(
             params,
             state.step_results
         )
-        print("RESOLVED PARAMS:", resolved_params)
+
+        print(
+            "RESOLVED PARAMS:",
+            resolved_params
+        )
+
     except Exception as e:
 
         state.error = (
@@ -201,8 +212,8 @@ def cal_executor_agent(
         < len(workflow)
     ):
 
-        state.next_step = "executor"
-        state.next_agent = "executor"
+        state.next_step = "calendar_executor"
+        state.next_agent = "calendar_executor"
 
         return state
 
@@ -210,8 +221,8 @@ def cal_executor_agent(
     # WORKFLOW FINISHED
     # --------------------------------------------------
 
-    print("TOOL:",tool)
-    print("RESULT:",result)
+    print("TOOL:", tool)
+    print("RESULT:", result)
 
     state.next_step = "validator"
     state.next_agent = "validator"

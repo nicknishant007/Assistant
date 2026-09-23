@@ -1,7 +1,9 @@
 import json
 from datetime import datetime
 from zoneinfo import ZoneInfo
+
 from langsmith import traceable
+
 from agent.state import AgentState
 from agent.prompt.calplanner_prompt import CALPLANNER_PROMPT
 from tools.caltool_registry import get_tool_descriptions
@@ -16,7 +18,8 @@ def build_chat_history(history):
         for msg in history
     )
 
-@traceable(name="palnner_agent")
+
+@traceable(name="planner_agent")
 def cal_planner_agent(
     state: AgentState
 ):
@@ -46,6 +49,7 @@ def cal_planner_agent(
     content = response.content.strip()
 
     if content.startswith("```json"):
+
         content = (
             content
             .replace("```json", "")
@@ -95,7 +99,7 @@ def cal_planner_agent(
 
     state.current_workflow_step = 0
 
-    state.current_agent = "planner"
+    state.current_agent = "calendar_planner"
 
     # ==========================================
     # CLARIFICATION QUESTION
@@ -156,6 +160,6 @@ def cal_planner_agent(
     # EXECUTE WORKFLOW
     # ==========================================
 
-    state.next_agent = "executor"
+    state.next_agent = "calendar_executor"
 
     return state

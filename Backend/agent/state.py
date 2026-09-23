@@ -4,128 +4,60 @@ from typing import Optional, Any
 
 class AgentState(BaseModel):
 
-    # ==================================================
     # USER / SESSION
-    # ==================================================
-
     user_id: Optional[str] = None
-
     db: Any = None
-
     conversation_id: Optional[str] = None
-
     user_query: str
+    conversation_history: list[dict] = (Field(default_factory=list))
 
-    conversation_history: list[dict] = (
-        Field(default_factory=list)
-    )
+    graph_messages: list[dict] = (Field(default_factory=list))
 
-    graph_messages: list[dict] = (
-        Field(default_factory=list)
-    )
-
-    # ==================================================
     # PLANNER
-    # ==================================================
-
     goal: Optional[str] = None
-
     selected_planner: Optional[str] = None
-
     plan: Optional[dict] = None
-
-    workflow: list[dict] = (
-        Field(default_factory=list)
-    )
-
-    plan_history: list[dict] = (
-        Field(default_factory=list)
-    )
-
+    workflow: list[dict] = (Field(default_factory=list))
+    plan_history: list[dict] = (Field(default_factory=list))
     user_feedback: Optional[str] = None
 
-    # ==================================================
     # EXECUTION
-    # ==================================================
-
     current_workflow_step: int = 0
-
-    step_results: dict = (
-        Field(default_factory=dict)
-    )
-
-    step_status: dict = (
-        Field(default_factory=dict)
-    )
-
-    # --------------------------------------------------
+    step_results: dict = (Field(default_factory=dict))
+    step_status: dict = (Field(default_factory=dict))
     # Current tool execution
-    # --------------------------------------------------
-
     selected_tool: Optional[str] = None
-
     tool_input: Optional[dict] = None
-
     tool_output: Optional[Any] = None
 
-    # --------------------------------------------------
     # Generic workflow context
-    # --------------------------------------------------
+    context: dict[str, Any] = (Field(default_factory=dict))
 
-    context: dict[str, Any] = (
-        Field(default_factory=dict)
-    )
-
-    # --------------------------------------------------
     # Generated / external artifacts
-    # --------------------------------------------------
+    artifacts: dict[str, Any] = (Field(default_factory=dict))
 
-    artifacts: dict[str, Any] = (
-        Field(default_factory=dict)
-    )
-
-    # ==================================================
     # EXECUTOR ROUTING
-    # ==================================================
-
     next_step: Optional[str] = None
 
-    # ==================================================
-    # APPROVAL FLAGS
-    # ==================================================
-
+    # APPROVAL FLAG
     approval_required: bool = False
-
     approval_status: Optional[str] = None
-
     approval_source: Optional[str] = None
-
     approval_message: Optional[str] = None
 
-    # ==================================================
-    # EVENT SELECTION
-    # ==================================================
 
+    # EVENT SELECTION
     candidate_events: list[dict] = (
         Field(default_factory=list)
     )
 
     selected_event: Optional[dict] = None
 
-    # ==================================================
     # SLOT SELECTION
-    # ==================================================
-
-    candidate_slots: list[dict] = (
-        Field(default_factory=list)
-    )
-
+    candidate_slots: list[dict] =(Field(default_factory=list))
     selected_slot: Optional[dict] = None
 
-    # ==================================================
-    # APPROVAL
-    # ==================================================
-
+    # APPROVAL 
     approval: dict = (
         Field(
             default_factory=lambda: {
@@ -139,59 +71,26 @@ class AgentState(BaseModel):
         )
     )
 
-    # approval types can include:
-    #
-    # event_selection
-    # slot_selection
-    # delete_confirmation
-    # update_confirmation
-    # schedule_confirmation
-    # notion_update_confirmation
-    # notion_create_confirmation
-    # etc.
-
-    # ==================================================
     # CLARIFICATION
-    # ==================================================
-
     pending_action: Optional[str] = None
-
     pending_question: Optional[str] = None
-
     missing_fields: list[str] = (
         Field(default_factory=list)
     )
 
-    # ==================================================
     # VALIDATION
-    # ==================================================
-
     validation_result: Optional[dict] = None
 
-    # ==================================================
     # RETRIES
-    # ==================================================
-
     retry_count: int = 0
-
     max_retries: int = 3
 
-    # ==================================================
     # ERROR
-    # ==================================================
-
     error: Optional[str] = None
 
-    # ==================================================
     # RESPONSE
-    # ==================================================
-
     final_response: Optional[str] = None
 
-    # ==================================================
-    # GRAPH ROUTING
-    # ==================================================
-
+    # GRAPH ROUTING 
     current_agent: str = "planner"
-
     next_agent: Optional[str] = None

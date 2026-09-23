@@ -1,4 +1,6 @@
-from typing import Any
+import asyncio
+import threading
+from typing import Any, Callable
 
 from services.notion.notion_service import (
     get_notion_tool_access,
@@ -11,9 +13,65 @@ from services.notion.notion_service import (
     get_notion_comments,
 )
 
-# 1. Get Notion Tool Access
 
-async def notion_get_tool_access_tool(
+# ============================================================
+# ASYNC -> SYNC BRIDGE
+# ============================================================
+
+def _run_async(
+    async_func: Callable[..., Any],
+    **kwargs,
+):
+    """
+    Execute an async function from synchronous code.
+
+    - If there is no running event loop, use asyncio.run().
+    - If a loop is already running (for example FastAPI),
+      execute the coroutine in a separate thread.
+    """
+
+    try:
+        asyncio.get_running_loop()
+
+    except RuntimeError:
+        # No running loop in this thread.
+        return asyncio.run(
+            async_func(**kwargs)
+        )
+
+    # A running event loop already exists in this thread.
+    # We cannot call asyncio.run() directly here.
+    result = {}
+    error = {}
+
+    def runner():
+        try:
+            result["value"] = asyncio.run(
+                async_func(**kwargs)
+            )
+
+        except BaseException as exc:
+            error["error"] = exc
+
+    thread = threading.Thread(
+        target=runner,
+        daemon=True,
+    )
+
+    thread.start()
+    thread.join()
+
+    if "error" in error:
+        raise error["error"]
+
+    return result["value"]
+
+
+# ============================================================
+# 1. GET NOTION TOOL ACCESS
+# ============================================================
+
+def notion_get_tool_access_tool(
     db,
     user_id: str,
     tool_names: list[str] | None = None,
@@ -23,16 +81,19 @@ async def notion_get_tool_access_tool(
     Notion connection.
     """
 
-    return await get_notion_tool_access(
+    return _run_async(
+        get_notion_tool_access,
         db=db,
         user_id=user_id,
         tool_names=tool_names,
     )
 
 
-# 2. Search Notion
+# ============================================================
+# 2. SEARCH NOTION
+# ============================================================
 
-async def notion_search_tool(
+def notion_search_tool(
     db,
     user_id: str,
     query: str,
@@ -49,7 +110,8 @@ async def notion_search_tool(
     Search the user's Notion workspace.
     """
 
-    return await search_notion(
+    return _run_async(
+        search_notion,
         db=db,
         user_id=user_id,
         query=query,
@@ -64,9 +126,11 @@ async def notion_search_tool(
     )
 
 
-# 3. Fetch Notion
+# ============================================================
+# 3. FETCH NOTION
+# ============================================================
 
-async def notion_fetch_tool(
+def notion_fetch_tool(
     db,
     user_id: str,
     id: str,
@@ -78,7 +142,8 @@ async def notion_fetch_tool(
     view, or supported Notion resource.
     """
 
-    return await fetch_notion(
+    return _run_async(
+        fetch_notion,
         db=db,
         user_id=user_id,
         id=id,
@@ -87,9 +152,11 @@ async def notion_fetch_tool(
     )
 
 
-# 4. Create Notion Pages
+# ============================================================
+# 4. CREATE NOTION PAGES
+# ============================================================
 
-async def notion_create_pages_tool(
+def notion_create_pages_tool(
     db,
     user_id: str,
     pages: list[dict[str, Any]],
@@ -101,7 +168,8 @@ async def notion_create_pages_tool(
     Create one or more Notion pages.
     """
 
-    return await create_notion_pages(
+    return _run_async(
+        create_notion_pages,
         db=db,
         user_id=user_id,
         pages=pages,
@@ -111,10 +179,11 @@ async def notion_create_pages_tool(
     )
 
 
-# 5. Update Notion Page
+# ============================================================
+# 5. UPDATE NOTION PAGE
+# ============================================================
 
-
-async def notion_update_page_tool(
+def notion_update_page_tool(
     db,
     user_id: str,
     page_id: str,
@@ -132,7 +201,8 @@ async def notion_update_page_tool(
     Update Notion page properties or content.
     """
 
-    return await update_notion_page(
+    return _run_async(
+        update_notion_page,
         db=db,
         user_id=user_id,
         page_id=page_id,
@@ -148,10 +218,11 @@ async def notion_update_page_tool(
     )
 
 
+# ============================================================
+# 6. QUERY NOTION DATA SOURCE
+# ============================================================
 
-# 6. Query Notion Data Source
-
-async def notion_query_data_source_tool(
+def notion_query_data_source_tool(
     db,
     user_id: str,
     data: dict[str, Any],
@@ -160,16 +231,19 @@ async def notion_query_data_source_tool(
     Query a Notion data source/database.
     """
 
-    return await query_notion_data_source(
+    return _run_async(
+        query_notion_data_source,
         db=db,
         user_id=user_id,
         data=data,
     )
 
 
-# 7. Create Notion Comment
+# ============================================================
+# 7. CREATE NOTION COMMENT
+# ============================================================
 
-async def notion_create_comment_tool(
+def notion_create_comment_tool(
     db,
     user_id: str,
     page_id: str,
@@ -179,11 +253,12 @@ async def notion_create_comment_tool(
     selection_with_ellipsis: str | None = None,
 ):
     """
-    Create a new Notion comment or reply to an
-    existing discussion.
+    Create a new Notion comment or reply to
+    an existing discussion.
     """
 
-    return await create_notion_comment(
+    return _run_async(
+        create_notion_comment,
         db=db,
         user_id=user_id,
         page_id=page_id,
@@ -194,10 +269,11 @@ async def notion_create_comment_tool(
     )
 
 
+# ============================================================
+# 8. GET NOTION COMMENTS
+# ============================================================
 
-# 8. Get Notion Comments
-
-async def notion_get_comments_tool(
+def notion_get_comments_tool(
     db,
     user_id: str,
     page_id: str,
@@ -209,7 +285,8 @@ async def notion_get_comments_tool(
     Get comments/discussions from a Notion page.
     """
 
-    return await get_notion_comments(
+    return _run_async(
+        get_notion_comments,
         db=db,
         user_id=user_id,
         page_id=page_id,
