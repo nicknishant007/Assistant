@@ -30,7 +30,7 @@ router = APIRouter(
 async def login_google(
     request: Request
 ):
-
+    print("SESSION BEFORE:", request.session)
     return await oauth.google.authorize_redirect(
         request,
         settings.GOOGLE_REDIRECT_URI,
@@ -43,7 +43,8 @@ async def login_google(
 async def callback_google(
     request: Request,
     db: Session = Depends(get_db)
-):
+):  
+    print("SESSION CALLBACK:",request.session)
     #google token
     token = await oauth.google.authorize_access_token(
         request
