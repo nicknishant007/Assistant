@@ -102,8 +102,8 @@ async def callback_google(
         key="access_token",
         value=access_token,
         httponly=True,
-        secure=False,      # True in production
-        samesite="lax",
+        secure=True,      # True in production
+        samesite="none",
         max_age=60 * 60 * 24 * 7
     )
 
