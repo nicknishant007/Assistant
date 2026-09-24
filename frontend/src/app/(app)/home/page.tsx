@@ -43,13 +43,13 @@ export default function HomePage() {
         </div>
 
         <div className="flex flex-wrap justify-center gap-3">
-          <Button size="lg" className="bg-blue text-white hover:bg-mint" onClick={() => router.push("/chat")}>
+          <Button size="lg" className="bg-cobalt text-white hover:bg-mint" onClick={() => router.push("/chat")}>
             Start chatting
           </Button>
-          <Button variant="secondary" size="lg" className="bg-blue text-white hover:bg-mint" onClick={() => router.push("/calendar")}>
+          <Button variant="secondary" size="lg" className="bg-cobalt text-white hover:bg-mint" onClick={() => router.push("/calendar")}>
             View calendar
           </Button>
-          <Button variant="secondary" size="lg" className="bg-blue text-white hover:bg-mint" onClick={() => router.push("/preferences")}>
+          <Button variant="secondary" size="lg" className="bg-cobalt text-white hover:bg-mint" onClick={() => router.push("/preferences")}>
             Manage preferences
           </Button>
         </div>
