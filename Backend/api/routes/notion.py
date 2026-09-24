@@ -86,8 +86,8 @@ async def login_notion(
         value=state,
         max_age=600,
         httponly=True,
-        secure=False,      # True in production HTTPS
-        samesite="lax",
+        secure=True,      # True in production HTTPS
+        samesite="none",
         path="/",
     )
 
