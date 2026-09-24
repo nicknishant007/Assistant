@@ -19,27 +19,47 @@ export const useAuthStore = create<AuthState>((set) => ({
   error: null,
 
   hydrate: async () => {
-      set({ status: "loading" });
+    set({ status: "loading" });
+
+    try {
+      const user = await authApi.me();
+
+      set({
+        user,
+        status: "authenticated",
+        error: null
+      });
+
+    } catch (e) {
+
+      console.log("First auth check failed, retrying...");
+
+      await new Promise(resolve =>
+        setTimeout(resolve, 1000)
+      );
 
       try {
-        const user = await authApi.me();
 
-        console.log("USER RECEIVED:", user);
+        const user = await authApi.me();
 
         set({
           user,
           status: "authenticated",
           error: null
         });
-      } catch (e) {
-        console.log("HYDRATE ERROR:", e);
+
+      } catch (err) {
+
+        console.log("Second auth check failed");
 
         set({
           user: null,
           status: "unauthenticated"
         });
+
       }
-    },
+    }
+  },
 
   logout: async () => {
     await authApi.logout();
