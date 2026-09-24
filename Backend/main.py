@@ -3,6 +3,7 @@ from config.settings import settings
 from fastapi import FastAPI,Request
 from fastapi.responses import JSONResponse
 import traceback
+from database.init_db import init_db
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 from api.routes.auth import router as auth_router
@@ -37,7 +38,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"]
 )
-
+init_db()
 app.include_router(auth_router)
 app.include_router(chat_router)
 app.include_router(scheduler_router)
