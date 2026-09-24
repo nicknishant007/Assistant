@@ -17,6 +17,10 @@ if (!baseURL && typeof window !== "undefined") {
     "NEXT_PUBLIC_API_BASE_URL is not set. Copy .env.example to .env.local."
   );
 }
+  console.log(
+  "API BASE URL =",
+  process.env.NEXT_PUBLIC_API_BASE_URL
+);
 
 export const apiClient = axios.create({
   baseURL,
