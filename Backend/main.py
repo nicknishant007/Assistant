@@ -28,7 +28,9 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     )
 app.add_middleware(
     SessionMiddleware,
-    secret_key=settings.SESSION_SECRET_KEY
+    secret_key=settings.SESSION_SECRET_KEY,
+    same_site="none",
+    https_only=True
 )
 
 app.add_middleware(
