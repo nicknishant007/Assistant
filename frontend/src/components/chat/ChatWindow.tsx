@@ -7,6 +7,7 @@ import { MessageBubble } from "./MessageBubble";
 import { TypingIndicator } from "./TypingIndicator";
 import { ChatInput } from "./ChatInput";
 import { Card } from "@/components/ui/Card";
+import { IntegrationsStatusBar } from "@/components/integrations/IntegrationsStatusBar";
 
 export function ChatWindow({ conversationId }: { conversationId: string | null }) {
   const router = useRouter();
@@ -41,7 +42,7 @@ export function ChatWindow({ conversationId }: { conversationId: string | null }
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="relative flex h-full min-h-0 flex-col">
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto flex max-w-3xl flex-col gap-4 p-4 sm:p-6">
           {messages.length === 0 && <EmptyState onSuggestion={handleSend} />}
@@ -57,6 +58,7 @@ export function ChatWindow({ conversationId }: { conversationId: string | null }
           <div ref={bottomRef} />
         </div>
       </div>
+      <IntegrationsStatusBar />
       <ChatInput
         onSend={handleSend}
         onVoiceSent={handleVoiceSent}

@@ -49,11 +49,11 @@ export function NotionConnectionCard() {
 
       <div className="mt-4">
         {connected ? (
-          <Button variant="secondary" size="sm" className="bg-cobalt text-white hover:bg-mint" onClick={disconnect} disabled={loading}>
+          <Button variant="secondary" size="sm" onClick={disconnect} className="bg-cobalt text-white hover:bg-mint" disabled={loading}>
             {loading ? "Disconnecting…" : "Disconnect"}
           </Button>
         ) : (
-          <Button variant="primary" size="sm" className="bg-cobalt text-white hover:bg-mint" onClick={connect} disabled={loading}>
+          <Button variant="primary" size="sm" onClick={connect} className="bg-cobalt text-white hover:bg-mint"disabled={loading}>
             {loading ? "Checking…" : "Connect Notion"}
           </Button>
         )}

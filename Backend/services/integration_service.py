@@ -76,3 +76,33 @@ def create_or_update_integration(
     db.refresh(integration)
 
     return integration
+
+
+def disconnect_integration(
+    db: Session,
+    user_id: str,
+    provider: str
+):
+    """
+    Marks an integration as disconnected and clears its tokens.
+    Does not delete the row, so reconnecting later is just an
+    update rather than a fresh insert.
+    """
+
+    integration = get_integration(
+        db=db,
+        user_id=user_id,
+        provider=provider
+    )
+
+    if not integration:
+        return None
+
+    integration.connected = False
+    integration.access_token = None
+    integration.refresh_token = None
+
+    db.commit()
+    db.refresh(integration)
+
+    return integration

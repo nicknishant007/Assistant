@@ -3,6 +3,7 @@
 import { AppShell } from "@/components/layout/AppShell";
 import { Card } from "@/components/ui/Card";
 import { useAuthStore } from "@/store/authStore";
+import { NotionConnectionCard } from "@/components/integrations/NotionConnectionCard";
 
 export default function SettingsPage() {
   const user = useAuthStore((s) => s.user);
@@ -15,15 +16,15 @@ export default function SettingsPage() {
           <h2 className="font-display text-lg font-bold">Account</h2>
           <p className="mt-2 text-sm text-ink/70">{user?.email}</p>
         </Card>
-        <Card tone="paper">
-          <h2 className="font-display text-lg font-bold">Integrations</h2>
+        <Card tone="surface">
+          <h2 className="font-display text-lg font-bold">Google Calendar</h2>
           <p className="mt-2 text-sm text-ink/70">
-            Google Calendar is connected via OAuth on login (see
-            Backend/services/integration_service.py). Reconnecting or
-            revoking access from here would call a new
-            /api/auth/integrations endpoint once the backend exposes one.
+            Connected via OAuth on login. Reconnecting or revoking access from
+            here would call a new /api/auth/integrations endpoint once the
+            backend exposes one.
           </p>
         </Card>
+        <NotionConnectionCard />
       </div>
     </AppShell>
   );

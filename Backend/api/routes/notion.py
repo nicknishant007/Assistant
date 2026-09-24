@@ -16,6 +16,7 @@ from config.settings import settings
 from services.integration_service import (
     create_or_update_integration,
     get_notion_integration,
+    disconnect_integration,
 )
 
 from services.notion.mcp_client import (
@@ -86,8 +87,8 @@ async def login_notion(
         value=state,
         max_age=600,
         httponly=True,
-        secure=True,      # True in production HTTPS
-        samesite="none",
+        secure=False,      # True in production HTTPS
+        samesite="lax",
         path="/",
     )
 
@@ -275,6 +276,45 @@ async def notion_connection(
     return {
         "connected": integration.connected,
         "provider": integration.provider,
+    }
+
+
+# ---------------------------------------------------------
+# DISCONNECT
+# ---------------------------------------------------------
+
+@router.post("/disconnect")
+async def disconnect_notion(
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Clears the stored Notion tokens for the current user and
+    marks the integration as disconnected. Idempotent — calling
+    it when there's nothing connected just returns the same
+    "not connected" shape instead of erroring.
+    """
+
+    integration = get_notion_integration(
+        db=db,
+        user_id=current_user.id,
+    )
+
+    if not integration or not integration.connected:
+        return {
+            "connected": False,
+            "provider": "notion",
+        }
+
+    disconnect_integration(
+        db=db,
+        user_id=current_user.id,
+        provider="notion",
+    )
+
+    return {
+        "connected": False,
+        "provider": "notion",
     }
 
 
