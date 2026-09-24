@@ -18,8 +18,7 @@ from services.calendar_service import (get_events,create_event,delete_event,upda
 from schemas.calendar import CreateEventRequest, FindEventRequest
 from schemas.calendar import UpdateEventRequest
 from schemas.calendar import DeleteEventRequest
-
-
+from fastapi import Request
 
 router = APIRouter(
     prefix="/api/auth",
@@ -118,6 +117,12 @@ async def get_me(
         "id":current_user.id,
         "email":current_user.email,
         "name":current_user.full_name
+    }
+
+@router.get("/debug")
+async def debug(request: Request):
+    return {
+        "cookies": request.cookies
     }
 
 #LOGOUT

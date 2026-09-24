@@ -11,6 +11,7 @@ export default function RootPage() {
   useEffect(() => {
     hydrate();
   }, [hydrate]);
+  
 
   useEffect(() => {
     if (status === "authenticated") router.replace("/home");
