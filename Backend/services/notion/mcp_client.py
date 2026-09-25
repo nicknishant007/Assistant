@@ -24,8 +24,7 @@ class NotionMCPClient:
                 http_client=http_client
             ) as (
                 read_stream,
-                write_stream,
-                _
+                write_stream
             ):
 
                 async with ClientSession(
@@ -55,8 +54,7 @@ class NotionMCPClient:
                 http_client=http_client
             ) as (
                 read_stream,
-                write_stream,
-                _
+                write_stream
             ):
 
                 async with ClientSession(
