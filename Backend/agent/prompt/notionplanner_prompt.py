@@ -773,43 +773,34 @@ Do not create a duplicate page when the user
 is clearly referring to an existing page.
 
 ==================================================
-READ VS MUTATION
+MUTATION / APPROVAL RULE
 ==================================================
 
-Read operations:
+This version of NuroFlow does NOT use user approval.
 
-- get_tool_access
-- search
-- fetch
-- query_data_source
-- get_comments
+The planner must generate the complete workflow directly.
 
-Mutation operations:
-
-- create_pages
-- update_page
-- create_comment
-
-Mutation workflows require:
-
-"approval_required": true
-
-Read-only workflows require:
+For BOTH read and mutation workflows:
 
 "approval_required": false
 
-For mutation workflows:
+"approval_message": ""
 
-"approval_message" must clearly describe
-what will change.
+Do not stop a valid mutation workflow for approval.
 
-Example:
+Examples of mutations:
 
-"Create a private draft page called Backend Roadmap."
+- notion_create_pages
+- notion_update_page
+- notion_create_comment
 
-"Update the title of Backend Notes to Backend Architecture."
+These must still be planned safely and deterministically,
+but they must execute directly through the workflow.
 
-"Add a comment to the Project Plan page."
+Do NOT generate an approval question.
+
+Only use pending_question when required information
+is genuinely missing or the target cannot be safely identified.
 
 ==================================================
 MINIMUM WORKFLOW RULE
@@ -1191,6 +1182,25 @@ OUTPUT EXAMPLE: CLARIFICATION
   "approval_message": "",
   "pending_question": "Which Notion page would you like me to update?"
 }}
+
+==================================================
+CURRENT EXECUTION POLICY
+==================================================
+
+NuroFlow currently executes Notion mutations directly.
+
+Never stop a valid mutation because approval is needed.
+
+Never generate approval_message for a mutation.
+
+The workflow should be immediately executable by
+notion_executor.
+
+Only stop when:
+
+1. Required information is missing.
+2. The requested target cannot be safely identified.
+3. The workflow cannot be constructed safely.
 
 ==================================================
 FINAL SELF CHECK

@@ -39,6 +39,10 @@ def notion_planner_agent(
     prompt = NOTIONPLANNER_PROMPT.format(
         tool_descriptions=get_tool_descriptions(),
 
+        plan_history=state.plan_history,
+
+        user_feedback=state.user_feedback or "",
+
         current_datetime=current_datetime.isoformat(),
 
         timezone="Asia/Kolkata",
@@ -46,10 +50,6 @@ def notion_planner_agent(
         conversation_history=build_chat_history(
             state.conversation_history
         ),
-
-        plan_history=state.plan_history,
-
-        user_feedback=state.user_feedback or "",
 
         context=state.context,
 
@@ -132,15 +132,6 @@ def notion_planner_agent(
         []
     )
 
-    state.approval_required = result.get(
-        "approval_required",
-        False
-    )
-
-    state.approval_message = result.get(
-        "approval_message"
-    )
-
     state.current_workflow_step = 0
 
     state.current_agent = "notion_planner"
@@ -166,15 +157,25 @@ def notion_planner_agent(
         return state
 
     # ==========================================
-    # APPROVAL REQUEST
+    # COMPLETE WORKFLOW REQUIRED
     # ==========================================
 
-    if result.get("approval_message"):
+    if not state.workflow:
+
+        state.error = (
+            "Notion Planner returned no workflow "
+            "and no clarification question."
+        )
+
+        state.final_response = (
+            "I couldn't determine the Notion workflow "
+            "for this request."
+        )
 
         append_message(
             state,
             "assistant",
-            state.approval_message
+            state.final_response
         )
 
         state.next_agent = None
@@ -182,22 +183,7 @@ def notion_planner_agent(
         return state
 
     # ==========================================
-    # NO WORKFLOW
-    # ==========================================
-
-    if not state.workflow:
-
-        state.goal = result.get(
-            "goal",
-            state.user_query
-        )
-
-        state.next_agent = "response"
-
-        return state
-
-    # ==========================================
-    # EXECUTE NOTION WORKFLOW
+    # EXECUTE WORKFLOW
     # ==========================================
 
     state.next_agent = "notion_executor"
