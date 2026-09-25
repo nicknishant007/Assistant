@@ -21,3 +21,4 @@ langgraph
 langsmith
 langchain-google-genai
 mcp
+psycopg
