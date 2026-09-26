@@ -1,1142 +1,634 @@
-NuroFlow :https://nuroflowassistantai.vercel.app/login
+# 🚀 NuroFlow
 
-An always-on AI assistant that turns natural language and voice commands into executable workflows across your calendar, Notion, and desktop.
+> An intelligent AI workflow assistant that understands natural-language requests, generates structured workflows, and executes them across connected services.
 
-NuroFlow is an AI assistant platform built around one idea:
+---
 
-You describe what you want. NuroFlow plans it, executes it, validates the result, and responds.
+## 1. 📌 Project Overview
 
-The system combines a Next.js frontend, FastAPI backend, LangGraph/LangChain orchestration, OAuth integrations, Notion MCP, voice I/O, persistent conversations, and an Electron desktop companion.
+NuroFlow is an AI-powered workflow assistant that allows users to interact with external services through natural language.
 
-        You
-         │
-         │ voice / text
-         ▼
-   ┌───────────────┐
-   │    NuroFlow   │
-   │  AI Assistant │
-   └───────┬───────┘
-           │
-           ▼
-      Main Planner
-           │
-     ┌─────┴─────────┐
-     │               │
-     ▼               ▼
-Calendar Planner   Notion Planner
-     │               │
-     ▼               ▼
-Calendar Executor Notion Executor
-     │               │
-     └──────┬────────┘
-            ▼
-         Validator
-            │
-            ▼
-         Response
+Instead of manually navigating different applications, users can describe what they want to accomplish, and NuroFlow determines the required actions, generates a structured workflow, executes the required tools, validates the results, and returns a natural-language response.
 
-The desktop vision extends the same assistant:
+For example:
 
-        Floating NuroFlow
-              │
-       ┌──────┼─────────┐
-       │      │         │
-     Voice Screenshot Recording
-       │      │         │
-       └──────┼─────────┘
-              ▼
-          NuroFlow Agent
+~~~text
+"Find my job application database in Notion and open the first page."
+~~~
 
-✨ What NuroFlow Does
+The request is processed through a structured pipeline:
 
-NuroFlow is designed as a workflow-oriented AI assistant, not just a chatbot.
-
-Core capabilities
-
-Natural-language task understanding
-
-Multi-step workflow planning
-
-Domain-specific planners
-
-Deterministic tool execution
-
-Workflow validation
-
-Re-planning after execution failures
-
-Google Calendar integration
-
-Notion integration through Notion MCP
-
-Voice input and voice responses
-
-Conversation persistence
-
-OAuth-based integrations
-
-Explicit tool registries
-
-LangGraph orchestration
-
-LangSmith tracing/observability
-
-Desktop capabilities in the final feature roadmap
-
-Always-on-top floating assistant
-
-Voice interaction from the overlay
-
-System-wide screenshots
-
-Start/stop screen recording
-
-Local screenshot and recording storage
-
-Desktop command routing
-
-Windows auto-start
-
-Electron desktop shell
-
-🧠 Core Architecture
-
-NuroFlow separates reasoning from execution.
-
-                         User Request
-                              │
-                              ▼
-                    ┌──────────────────┐
-                    │   Main Planner   │
-                    └────────┬─────────┘
-                             │
-                  ┌──────────┴──────────┐
-                  │                     │
-                  ▼                     ▼
-        ┌──────────────────┐   ┌──────────────────┐
-        │ Calendar Planner │   │  Notion Planner  │
-        └────────┬─────────┘   └────────┬─────────┘
-                 │                      │
-                 ▼                      ▼
-        ┌──────────────────┐   ┌──────────────────┐
-        │ Calendar Executor│   │ Notion Executor  │
-        └────────┬─────────┘   └────────┬─────────┘
-                 │                      │
-                 └──────────┬───────────┘
-                            ▼
-                    ┌───────────────┐
-                    │   Validator   │
-                    └───────┬───────┘
-                            │
-                            ▼
-                    ┌───────────────┐
-                    │ Response Agent│
-                    └───────────────┘
-
-Responsibilities
-
-Main Planner
-
-Understand the request
-
-Select the correct domain
-
-Handle general conversation
-
-Detect genuinely ambiguous commands
-
-Domain Planner
-
-Convert the request into a complete workflow
-
-Decide which tools are required
-
-Resolve prerequisites and dependencies
-
-Domain Executor
-
-Execute the workflow deterministically
-
-Resolve step references
-
-Save step results
-
-Track step status
-
-Validator
-
-Verify execution
-
-Detect failures
-
-Check required result structure
-
-Trigger bounded re-planning when needed
-
-Response Agent
-
-Produce the final user-facing response
-
-Keep internal workflow details hidden
-
-🔄 Workflow Lifecycle
-
+~~~text
 User Request
-     │
-     ▼
+      ↓
 Main Planner
-     │
-     ├── General conversation ───────► Response
-     │
-     ├── Calendar ───────────────────► Calendar Planner
-     │
-     └── Notion ─────────────────────► Notion Planner
-                                           │
-                                           ▼
-                                      Workflow JSON
-                                           │
-                                           ▼
-                                        Executor
-                                           │
-                                           ▼
-                                      Tool Calls
-                                           │
-                                           ▼
-                                       Validator
-                                      /         \
-                                  success       failure
-                                     │            │
-                                     ▼            ▼
-                                  Response     Re-plan
-
-The LLM produces the plan. The executor performs that plan. The validator decides whether the execution was successful.
-
-🧩 Agent Roles
-
-Main Planner
-
-The Main Planner is the routing layer.
-
-It decides whether the request belongs to:
-
-Calendar
-
-Notion
-
-general conversation
-
-clarification
-
-It should remain thin and avoid performing domain-specific operations itself.
-
-Calendar Planner
-
-The Calendar Planner creates workflows for:
-
-creating events
-
-scheduling tasks
-
-rescheduling
-
-deleting events/tasks
-
-reading calendar information
-
-multi-step calendar workflows
-
-The Calendar Executor performs those workflows deterministically.
-
-Notion Planner
-
-The Notion Planner creates workflows for:
-
-searching pages/databases
-
-fetching resources
-
-querying data sources
-
-creating pages
-
-updating pages
-
-comments/discussions
-
-reading comments
-
-Example dependency references:
-
-{{step_1.results[0].id}}
-
-{{step_2.data_sources[0].url}}
-
-Executors
-
-Executors should not reinvent the plan.
-
-A typical executor cycle is:
-
-Read current step
       ↓
-Resolve parameters
+Domain Planner
       ↓
-Find registered tool
+Workflow Generation
       ↓
-Execute tool
+Domain Executor
       ↓
-Save result
-      ↓
-Update status
-      ↓
-Move to next step
-
 Validator
-
-The Validator checks:
-
-workflow step status
-
-existence of tool results
-
-generic tool failures
-
-required mutation fields
-
-execution errors
-
-Failures may return the workflow to planning, subject to the configured retry limit.
-
+      ↓
 Response Agent
+      ↓
+Final Response
+~~~
 
-The Response Agent converts execution state into a concise user-facing answer.
+NuroFlow is built around a **Planner → Executor → Validator** architecture and uses **LangGraph** to orchestrate the complete workflow.
 
-It should never expose internal planner names, step IDs, or implementation details.
+---
 
-🗃️ State Management
+## 2. ✨ Key Features
 
-NuroFlow uses a shared AgentState across the graph.
+### 🧠 Natural Language Interaction
 
-It carries information such as:
-
-user identity
-
-conversation identity
-
-conversation history
-
-current goal
-
-selected planner
-
-generated plan
-
-workflow steps
-
-plan history
-
-current workflow step
-
-step results
-
-step status
-
-context
-
-artifacts
-
-approval state
-
-validation results
-
-retry state
-
-final response
-
-graph routing information
-
-The shared state is the contract between graph nodes.
-
-🧰 Tool Registry Architecture
-
-NuroFlow uses explicit tool registries.
-
-A registry entry describes the tool, its purpose, inputs, prerequisites, output, and executable function.
-
-Conceptually:
-
-TOOLS = {
-    "tool_name": {
-        "function": tool_function,
-        "description": "...",
-        "use_when": "...",
-        "prerequisite_tools": [],
-        "input_parameters": {...},
-        "output": "...",
-        "example_output": {...},
-    }
-}
-
-This gives planners a structured view of available capabilities while keeping implementation details inside tool modules.
-
-Current domains include:
-
-Calendar
-Notion
-
-The architecture is intended to support future domains such as:
-
-Gmail
-Slack
-Desktop
-Files
-Browser
-
-📝 Notion Integration
-
-NuroFlow uses Notion MCP for Notion operations.
-
-NuroFlow
-   │
-   ▼
-Notion Planner
-   │
-   ▼
-Notion Executor
-   │
-   ▼
-Synchronous Notion Tool Layer
-   │
-   ▼
-Async Notion Service
-   │
-   ▼
-Notion MCP
-
-The public functions exposed to the executor are intentionally synchronous. Internal MCP/service operations may remain asynchronous.
-
-Notion OAuth
-
-The intended user flow is:
-
-Settings
-   │
-   ▼
-Connect Notion
-   │
-   ▼
-Notion OAuth
-   │
-   ▼
-Callback
-   │
-   ▼
-user_integrations
-   │
-   ▼
-provider = "notion"
-
-The frontend must never receive raw Notion access or refresh tokens.
-
-Notion read tools
-
-tool access
-
-search
-
-fetch
-
-data-source query
-
-comments retrieval
-
-Notion mutation tools
-
-create pages
-
-update pages
-
-create comments
-
-Mutations require explicit approval.
-
-🔐 Notion Safety
-
-Never invent:
-
-page IDs
-
-database IDs
-
-data-source URLs
-
-database property names
-
-Use previous tool outputs through workflow references:
-
-{{step_1.id}}
-
-{{step_1.results[0].id}}
-
-{{step_2.data_sources[0].url}}
-
-For ambiguous mutation requests:
-
-Search
-   ↓
-Resolve ambiguity
-   ↓
-Stop before mutation if unsafe
-
-For zero results, do not invent an ID or continue into a dependent mutation.
-
-🎙️ Voice Architecture
-
-NuroFlow's voice pipeline is:
-
-Microphone
-    ↓
-POST /voice
-    ↓
-Speech-to-Text
-    ↓
-chat_service
-    ↓
-LangGraph
-    ↓
-Workflow Execution
-    ↓
-Response Generation
-    ↓
-Text-to-Speech
-    ↓
-Audio Response
-
-The desktop overlay reuses this same pipeline.
-
-It is a new client, not a second assistant backend.
-
-🖥️ Always-On Desktop Companion
-
-The final feature roadmap adds an Electron desktop companion.
-
-The desktop system is intentionally separated from the AI brain:
-
-Electron
-   =
-desktop UI + desktop capabilities
-
-FastAPI
-   =
-backend + authentication + services
-
-LangGraph
-   =
-reasoning + orchestration
-
-Tools
-   =
-external capabilities
-
-🫧 Floating Overlay
-
-The desktop companion will provide a small NuroFlow bubble that can:
-
-stay always on top
-
-remain frameless and transparent
-
-be dragged
-
-remember its position
-
-expand on click
-
-collapse on Escape/click-away
-
-avoid a taskbar entry
+Users can communicate with NuroFlow using normal conversational language instead of manually operating individual tools or services.
 
 Example:
 
-        ┌──────────────────┐
-        │     NuroFlow     │
-        │                  │
-        │       🎙         │
-        │                  │
-        │   Listening...   │
-        │                  │
-        │   Last response  │
-        └──────────────────┘
+~~~text
+"Find my job applications database in Notion."
+~~~
 
-The overlay can have states such as:
+### 🤖 Multi-Agent Architecture
 
-IDLE
-LISTENING
-PROCESSING
-RESPONDING
-ERROR
+NuroFlow uses specialized agents for different responsibilities:
 
-📸 Screenshot Capability
+- Main Planner
+- Calendar Planner
+- Notion Planner
+- Calendar Executor
+- Notion Executor
+- Validator
+- Response Agent
 
-The desktop screenshot architecture is:
+Each component has a focused responsibility within the overall workflow.
 
-Voice Command
+### 🔀 Domain-Based Planning
+
+The Main Planner determines which domain is required for the user's request.
+
+Currently supported domains include:
+
+- 📝 Notion
+- 🗓️ Google Calendar
+
+The architecture is designed so additional domains can be added using the same planner/executor pattern.
+
+### ⚙️ Structured Workflow Generation
+
+Instead of generating one tool call at a time, the domain planner generates a complete workflow containing the steps required to accomplish the task.
+
+### 🔧 Deterministic Tool Execution
+
+The executor does not use an LLM for every workflow step.
+
+The planner decides **what needs to happen**, while the executor deterministically performs the generated operations.
+
+### 🔗 Multi-Step Tool Chaining
+
+A workflow can contain dependencies between steps.
+
+For example:
+
+~~~text
+{{step_1.results[0].id}}
+~~~
+
+A later workflow step can use the result produced by an earlier step.
+
+### 💬 Clarification Handling
+
+When required information is missing, the planner can ask the user for clarification instead of generating an incomplete workflow.
+
+~~~text
+User Request
      ↓
 Planner
      ↓
-Desktop Tool
+Required Information Missing
      ↓
-Desktop Command
+Clarification Question
      ↓
-Electron
+User Response
      ↓
-Operating System Capture
-     ↓
-PNG
+Workflow Generation
+~~~
 
-Screenshots are stored locally:
+### ✅ Validation and Retry
 
-NuroFlow/
-└── Screenshots/
+After execution, the workflow is validated.
+
+If the workflow fails, the system can route the task back through the planning stage for replanning and retry.
+
+### 🧾 Conversation Context
+
+NuroFlow maintains conversation history so that follow-up requests can be interpreted using previous interactions.
 
 Example:
 
-screenshot_2026-09-23_18-20-13.png
+~~~text
+User:
+Find my job application page in Notion.
 
-The initial goal is local capture. A future vision pipeline can upload the image for analysis.
+Assistant:
+I found your job application page.
 
-🎥 Screen Recording
+User:
+Open the first one.
+~~~
 
-NuroFlow will support:
+The context from the previous interaction can be used when processing the follow-up request.
 
-start_screen_recording
-stop_screen_recording
+### 🔐 Authentication and Integrations
 
-State machine:
+NuroFlow uses:
 
-IDLE
-  ↓
-RECORDING
-  ↓
-STOPPING
-  ↓
-SAVED
-  ↓
-IDLE
+- JWT-based authentication for users
+- OAuth-based authentication for external service integrations
 
-Recordings are stored locally:
+---
 
-NuroFlow/
-└── Recordings/
+## 3. 🏗️ System Architecture
+
+NuroFlow follows a modular architecture where planning, execution, validation, and response generation are handled by separate components.
+
+~~~text
+                         ┌─────────────────┐
+                         │      User       │
+                         └────────┬────────┘
+                                  │
+                                  ▼
+                       ┌─────────────────────┐
+                       │    Main Planner     │
+                       └──────────┬──────────┘
+                                  │
+                  ┌───────────────┴───────────────┐
+                  │                               │
+                  ▼                               ▼
+        ┌──────────────────┐             ┌──────────────────┐
+        │ Calendar Planner │             │  Notion Planner  │
+        └────────┬─────────┘             └────────┬─────────┘
+                 │                                │
+                 ▼                                ▼
+        ┌──────────────────┐             ┌──────────────────┐
+        │Calendar Executor │             │ Notion Executor  │
+        └────────┬─────────┘             └────────┬─────────┘
+                 │                                │
+                 └───────────────┬────────────────┘
+                                 │
+                                 ▼
+                       ┌─────────────────────┐
+                       │      Validator      │
+                       └──────────┬──────────┘
+                                  │
+                                  ▼
+                       ┌─────────────────────┐
+                       │   Response Agent    │
+                       └──────────┬──────────┘
+                                  │
+                                  ▼
+                         ┌─────────────────┐
+                         │      User       │
+                         └─────────────────┘
+~~~
+
+The architecture separates the system into four major stages:
+
+~~~text
+Planning
+   ↓
+Execution
+   ↓
+Validation
+   ↓
+Response
+~~~
+
+This separation allows LLMs to handle reasoning and planning while deterministic components handle actual workflow execution.
+
+---
+
+## 4. 🤖 Agent Architecture
+
+NuroFlow uses multiple specialized agents instead of relying on a single agent for the complete task.
+
+### 🧭 Main Planner
+
+The Main Planner is the entry point for user requests.
+
+Its responsibilities include:
+
+- Understanding the user request
+- Determining whether the request is a general conversation or a task
+- Identifying the required domain
+- Routing the request to the appropriate domain planner
+- Handling requests that can be answered directly
+
+The routing concept is:
+
+~~~text
+                     Main Planner
+                          │
+             ┌────────────┼────────────┐
+             │            │            │
+             ▼            ▼            ▼
+         General       Calendar      Notion
+        Conversation    Planner      Planner
+~~~
+
+---
+
+### 🗓️ Calendar Planner
+
+The Calendar Planner handles calendar-related requests.
+
+Its responsibilities include:
+
+- Understanding the calendar task
+- Determining the required calendar operations
+- Generating the required workflow
+- Providing structured parameters for the executor
 
 Example:
 
-screen_recording_2026-09-23_18-25-04.webm
+~~~text
+"Create a meeting with Alice tomorrow at 4 PM."
+~~~
 
-Invalid operations such as stopping a recording that is not running must fail safely.
+The planner converts this request into a structured workflow that can be executed by the Calendar Executor.
 
-🔌 Desktop Command Layer
+---
 
-The backend does not directly access the user's physical screen.
+### 📝 Notion Planner
 
-Instead:
+The Notion Planner handles Notion-related requests.
 
-FastAPI / LangGraph
-        │
-        ▼
-Desktop Command
-        │
-        ▼
-Electron
-        │
-        ▼
-Operating System
+Its responsibilities include:
 
-The intended command contract is simple and explicit.
+- Understanding the Notion request
+- Selecting the required tools
+- Generating a complete workflow
+- Connecting multiple workflow steps
+- Asking for clarification when required information is missing
 
 Example:
 
-{
-  "request_id": "abc123",
-  "action": "take_screenshot"
-}
+~~~text
+Step 1 → Search Notion
+Step 2 → Use the result from Step 1
+Step 3 → Fetch or modify the selected page
+~~~
 
-The desktop client performs the local action and returns a structured result.
+Workflow steps can reference previous results:
 
-This architecture also leaves room for future desktop tools such as:
+~~~text
+{{step_1.results[0].id}}
+~~~
 
-open_app
-focus_window
-open_url
-read_clipboard
-take_screenshot
-start_screen_recording
-stop_screen_recording
+---
 
-🔒 Security Model
+### ⚙️ Domain Executor
 
-The desktop layer should use a restricted Electron security model:
+The Domain Executor is responsible for executing the workflow generated by the domain planner.
 
-contextIsolation: true
+The executor is deterministic and does not require an LLM call for every individual step.
 
-nodeIntegration: false
+Its execution model is:
 
-preload scripts
+~~~text
+Generated Workflow
+       ↓
+Read Current Step
+       ↓
+Resolve Parameters
+       ↓
+Execute Tool
+       ↓
+Store Result
+       ↓
+Move to Next Step
+~~~
 
-explicit contextBridge methods
+This separation reduces unnecessary LLM calls and keeps execution predictable.
 
-allowlisted IPC actions
+---
 
-no arbitrary shell execution
+### ✅ Validator
 
-no unrestricted Node access from the renderer
+The Validator checks the result of workflow execution.
 
-no exposure of backend secrets or OAuth tokens
+~~~text
+Executor
+   ↓
+Validator
+   ├── Success → Response
+   └── Failure → Replanning / Retry
+~~~
 
-visible recording state
+The validator acts as a control layer between execution and the final response.
 
-Screen capture and recording should never be silent or hidden from the user.
+---
 
-🔑 Authentication & Integrations
+### 💬 Response Agent
 
-NuroFlow's integration model is user-scoped.
+The Response Agent receives the final workflow results and generates the user-facing response.
 
-Google
-  └── Calendar
+Example:
 
-Notion
-  └── MCP
+~~~text
+Workflow Result
+      ↓
+Response Agent
+      ↓
+"Your meeting with Alice has been created for tomorrow at 4 PM."
+~~~
 
-Desktop
-  └── Local Electron capabilities
+Its purpose is to convert structured execution results into a clear conversational response.
 
-Integration credentials belong to the backend and are associated with the authenticated user.
+---
 
-The desktop client should reuse the existing authentication architecture rather than creating a separate identity system.
+## 5. 🔄 LangGraph Workflow
 
-🗂️ High-Level Repository Structure
+NuroFlow uses **LangGraph** to orchestrate the different agents and execution stages.
 
-The exact repository structure may evolve, but the intended organization is:
+The graph begins with the Main Planner:
 
-NuroFlow/
-│
-├── frontend/
-│   ├── app/
-│   ├── components/
-│   ├── store/
-│   ├── lib/
-│   └── ...
-│
-├── Backend/
-│   ├── api/
-│   ├── agent/
-│   │   ├── planner_agent.py
-│   │   ├── notionplanner_agent.py
-│   │   ├── notionexecutor_agent.py
-│   │   ├── calplanner_agent.py
-│   │   ├── calexecutor_agent.py
-│   │   ├── validator_agent.py
-│   │   └── response_agent.py
-│   │
-│   ├── tools/
-│   │   ├── caltool_registry.py
-│   │   ├── notiontool_registry.py
-│   │   ├── notion_tool.py
-│   │   └── ...
-│   │
-│   ├── services/
-│   │   ├── notion/
-│   │   └── ...
-│   │
-│   └── ...
-│
-└── electron/
-    ├── main.ts
-    ├── windows/
-    ├── preload/
-    ├── ipc/
-    └── ...
+~~~text
+START
+  ↓
+Planner
+~~~
 
-🚀 Development Roadmap
+The Main Planner then routes the request depending on its type.
 
-Phase 1 — Core Agent
+### General Conversation
 
-Main Planner
+~~~text
+START
+  ↓
+Planner
+  ↓
+Response
+  ↓
+END
+~~~
 
+### Calendar Task
+
+~~~text
+START
+  ↓
+Planner
+  ↓
 Calendar Planner
-
-Notion Planner
-
+  ↓
 Calendar Executor
+  ↓
+Validator
+  ↓
+Response
+  ↓
+END
+~~~
 
+### Notion Task
+
+~~~text
+START
+  ↓
+Planner
+  ↓
+Notion Planner
+  ↓
 Notion Executor
-
+  ↓
 Validator
-
-Response Agent
-
-Shared state
-
-Tool registries
-
-Phase 2 — Integrations
-
-Google Calendar OAuth
-
-Notion OAuth
-
-Notion MCP
-
-Persistent user integrations
-
-Conversation persistence
-
-Phase 3 — Voice
-
-Speech-to-text
-
-Voice workflow execution
-
-Text-to-speech
-
-Voice conversation continuity
-
-Phase 4 — Electron Shell
-
-Electron
-
-Main NuroFlow window
-
-Floating overlay
-
-Persistent overlay position
-
-Windows auto-start
-
-Phase 5 — Desktop Voice
-
-Overlay microphone
-
-Lightweight overlay state
-
-Existing /voice pipeline
-
-Response playback
-
-Phase 6 — Screenshot
-
-Desktop screenshot tool
-
-Secure Electron IPC
-
-Local PNG storage
-
-Capture status
-
-Phase 7 — Screen Recording
-
-Start recording
-
-Stop recording
-
-Recording state
-
-Local .webm storage
-
-Recording indicator
-
-Phase 8 — Hardening
-
-Error handling
-
-OAuth reconnect/disconnect
-
-Permission handling
-
-Desktop command reliability
-
-Packaging
-
-Tests
-
-Observability
-
-🧪 Example Interactions
-
-Calendar
-
-User:
-Schedule a friend party tomorrow at 3:50 PM for three hours.
-
-NuroFlow:
-Main Planner
-→ Calendar Planner
-→ Calendar Executor
-→ Validator
-→ Response
-
-Notion
-
-User:
-Find my Companies I have applied database and tell me
-what companies are currently listed.
-
-NuroFlow:
-Main Planner
-→ Notion Planner
-→ Search
-→ Fetch
-→ Query Data Source
-→ Validator
-→ Response
-
-Screenshot
-
-User:
-Take a screenshot.
-
-NuroFlow:
-Main Planner
-→ Desktop Tool
-→ Electron
-→ PNG saved locally
-
-Recording
-
-User:
-Start recording.
-
-NuroFlow:
-→ Desktop command
-→ Electron
-→ Recording starts
-
-Then:
-
-User:
-Stop recording.
-
-NuroFlow:
-→ Desktop command
-→ Electron
-→ WebM saved locally
-
-🧭 Design Principles
-
-One Assistant Brain
-
-Electron is an interface and desktop capability layer, not another planner.
-
-Plan → Execute → Validate
-
-LLMs plan. Deterministic executors execute. Validators verify.
-
-Tools Are Capabilities
-
-Calendar, Notion, and Desktop are exposed as capabilities through registries.
-
-Shared State
-
-Context and execution results move through the graph using a shared state contract.
-
-Safety Before Mutation
-
-Resolve resources, validate prerequisites, request approval where needed, then mutate.
-
-Modular Domains
-
-A future domain should fit the same overall pattern:
-
-Domain Planner
-     ↓
-Domain Executor
-     ↓
-Domain Tools
-     ↓
-Shared Validator
-
-🛠️ Tech Stack
-
-Frontend
-
-Next.js
-
-React
-
-TypeScript
-
-Tailwind CSS
-
-shadcn/ui
-
-Zustand
-
-Backend
-
-Python
-
-FastAPI
-
-SQLAlchemy
-
-PostgreSQL
-
-Redis
-
-AI / Agent Layer
-
-LangChain
-
-LangGraph
-
-LangSmith
-
-Gemini
-
-Structured workflow planning
-
-Integrations
-
-Google Calendar OAuth
-
-Notion OAuth
-
-Notion MCP
-
-Desktop
-
-Electron
-
-Electron IPC
-
-MediaRecorder
-
-OS display/screen capture APIs
-
-📌 Project Status
-
-NuroFlow is being developed incrementally.
-
-Established architecture
-
-Core LangGraph orchestration
-
-Main Planner
-
-Calendar planning/execution
-
-Notion planning/execution architecture
-
+  ↓
+Response
+  ↓
+END
+~~~
+
+### Failed Workflow
+
+When validation identifies a failure, the graph can return to the planning stage:
+
+~~~text
+Executor
+   ↓
 Validator
+   ↓
+Failure
+   ↓
+Planner
+   ↓
+Replanning
+   ↓
+Executor
+~~~
 
-Response Agent
+This allows the system to attempt replanning rather than immediately returning a failed result.
 
-Conversation persistence
+---
 
-Google Calendar integration
+## 6. 🧠 How the Agent Works
 
-Notion MCP integration
+NuroFlow follows a simple design principle:
 
-Voice pipeline
+> **LLMs decide what should happen, while deterministic components execute what was decided.**
 
-Final major feature
+A typical task goes through the following stages.
 
-Always-On Desktop Companion
+### Step 1 — Understand the Request
 
-Electron
-   +
-Floating Overlay
-   +
-Voice
-   +
-Screenshot
-   +
-Screen Recording
+The user sends a natural-language request.
 
-This desktop feature is being added without replacing the existing assistant architecture.
+~~~text
+"Find my job application database in Notion and open the first matching page."
+~~~
 
-🎯 Vision
+### Step 2 — Select the Domain
 
-NuroFlow is not intended to be just another chat window.
+The Main Planner identifies that the request belongs to the Notion domain.
 
-The goal is an assistant that is available while you work.
-
-Instead of:
-
-Open application
-→ type
-→ wait
-→ perform the remaining work manually
-
-the intended experience is:
-
-Keep working
+~~~text
+User Request
      ↓
-Speak to NuroFlow
+Main Planner
      ↓
-NuroFlow understands the goal
+Notion Planner
+~~~
+
+### Step 3 — Generate a Complete Workflow
+
+The Notion Planner generates the workflow required to complete the request.
+
+Conceptually:
+
+~~~text
+Step 1 → Search Notion
+Step 2 → Select the required result
+Step 3 → Fetch the selected page
+~~~
+
+The generated workflow can contain dependencies between steps:
+
+~~~text
+{{step_1.results[0].id}}
+~~~
+
+### Step 4 — Execute the Workflow
+
+The Domain Executor reads the generated workflow and executes each step sequentially.
+
+~~~text
+Workflow
+   ↓
+Step 1
+   ↓
+Store Result
+   ↓
+Step 2
+   ↓
+Store Result
+   ↓
+Step 3
+~~~
+
+### Step 5 — Validate the Result
+
+After execution, the Validator checks whether the workflow completed successfully.
+
+~~~text
+Execution Result
+      ↓
+Validator
+~~~
+
+A successful workflow continues to the Response Agent.
+
+A failed workflow can be routed back for replanning.
+
+### Step 6 — Generate the Final Response
+
+The Response Agent converts the structured result into a natural-language response.
+
+~~~text
+Validated Workflow Result
+          ↓
+    Response Agent
+          ↓
+     Final Response
+~~~
+
+The overall process can be summarized as:
+
+~~~text
+User Request
      ↓
-Plans the workflow
+Understand Intent
      ↓
-Uses the appropriate tools
+Select Domain
      ↓
-Validates execution
+Generate Workflow
      ↓
-Responds
+Resolve Dependencies
+     ↓
+Execute Tools
+     ↓
+Validate Result
+     ↓
+Generate Response
+~~~
 
-Eventually:
+---
 
-See the NuroFlow bubble.
-Speak.
-Let the workflow execute.
+## 7. 🔗 Workflow Structure
 
-🤝 Contributing
+NuroFlow represents a task as a structured workflow containing individual executable steps.
 
-When adding a capability:
+A simplified workflow looks like:
 
-Define the capability.
+~~~json
+{
+  "workflow": [
+    {
+      "id": "step_1",
+      "tool": "notion-search",
+      "params": {
+        "query": "Companies I have applied"
+      }
+    },
+    {
+      "id": "step_2",
+      "tool": "notion-fetch",
+      "params": {
+        "page_id": "{{step_1.results[0].id}}"
+      }
+    }
+  ]
+}
+~~~
 
-Implement the tool.
+Each workflow step contains three core fields:
 
-Register the tool.
+| Field | Description |
+|-------|-------------|
+| `id` | Unique identifier for the workflow step |
+| `tool` | Tool that should be executed |
+| `params` | Parameters required by the tool |
 
-Add planner guidance.
+### 🔗 Step Dependencies
 
-Add prerequisite logic.
+Workflow steps can reference results generated by previous steps.
 
-Add validation rules if needed.
+For example:
 
-Add tests.
+~~~text
+{{step_1.results[0].id}}
+~~~
 
-Preserve existing domain behavior.
+represents a dependency where `step_2` uses the `id` returned by `step_1`.
 
-Avoid one-off shortcuts that bypass the shared orchestration model.
+Conceptually:
 
-⚠️ Current Scope
+~~~text
+step_1
+  ↓
+results
+  ↓
+[0]
+  ↓
+id
+  ↓
+step_2 parameter
+~~~
 
-The immediate desktop target is Windows-first.
+This allows NuroFlow to construct multi-step workflows where the output of one operation becomes the input of another.
 
-Android and iOS are outside the current implementation scope.
+The executor resolves these references before executing the corresponding tool.
 
-The core desktop release is focused on:
+### 📋 Workflow Execution Model
 
-Floating Overlay
-        +
-Voice
-        +
-Screenshot
-        +
-Screen Recording
+The workflow is executed sequentially:
 
-❤️ NuroFlow
+~~~text
+Workflow
+   ↓
+Step 1
+   ↓
+Result
+   ↓
+Step 2
+   ↓
+Result
+   ↓
+Step 3
+   ↓
+Final Result
+~~~
 
-Natural language in.
-Verified workflows out.
-
-Think → Plan → Execute → Validate → Respond
-
-And soon:
-
-Work normally.
-Speak naturally.
-Let NuroFlow handle the workflow.
+This provides a structured mechanism for chaining multiple tool operations together while keeping execution deterministic.
