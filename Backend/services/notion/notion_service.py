@@ -1,12 +1,17 @@
 from __future__ import annotations
+from datetime import datetime,timedelta,UTC
 from typing import Any
 from sqlalchemy.orm import Session
-from services.integration_service import get_notion_integration
+from services.integration_service import (
+    get_notion_integration,
+    create_or_update_integration,
+)
 from .mcp_client import NotionMCPClient
+from .oauth import discover_mcp_oauth, refresh_access_token
 
 # Helpers
 
-def _get_notion_client(
+async def _get_notion_client(
     db: Session,
     user_id: str,
 ) -> NotionMCPClient:
@@ -17,25 +22,60 @@ def _get_notion_client(
     )
 
     if not integration:
-        raise ValueError(
-            "Notion is not connected for this user."
-        )
+        raise ValueError("Notion is not connected for this user.")
 
     if not integration.connected:
-        raise ValueError(
-            "Notion integration is disconnected."
-        )
+        raise ValueError("Notion integration is disconnected.")
 
     if not integration.access_token:
-        raise ValueError(
-            "Notion access token is missing."
+        raise ValueError("Notion access token is missing.")
+
+    # --- NEW: refresh if expired ---
+    is_expired = (
+        integration.token_expires_at is not None
+        and integration.token_expires_at <= datetime.utcnow()
+    )
+
+    if is_expired:
+
+        if not integration.refresh_token or not integration.notion_client_id:
+            raise ValueError(
+                "Notion token expired and cannot be refreshed "
+                "(missing refresh_token or client_id). "
+                "Please reconnect Notion."
+            )
+
+        metadata = await discover_mcp_oauth()
+
+        tokens = await refresh_access_token(
+            metadata=metadata,
+            refresh_token=integration.refresh_token,
+            client_id=integration.notion_client_id,
+        )
+
+        new_access_token = tokens.get("access_token")
+        new_refresh_token = tokens.get("refresh_token") or integration.refresh_token
+
+        expires_in = tokens.get("expires_in")
+        new_expires_at = (
+            datetime.now(UTC) + timedelta(seconds=int(expires_in))
+            if expires_in is not None
+            else None
+        )
+
+        integration = create_or_update_integration(
+            db=db,
+            user_id=user_id,
+            provider="notion",
+            access_token=new_access_token,
+            refresh_token=new_refresh_token,
+            client_id=integration.notion_client_id,
+            expires_at=new_expires_at,
         )
 
     return NotionMCPClient(
         notion_token=integration.access_token
     )
-
-
 def _serialize_result(result: Any) -> Any:
     
     structured_content = getattr(

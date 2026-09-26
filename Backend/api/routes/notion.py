@@ -4,26 +4,20 @@ from fastapi import (
     HTTPException,
     Request,
 )
-
+from datetime import datetime, timedelta
 from fastapi.responses import RedirectResponse
-
 from sqlalchemy.orm import Session
-
 from database.session import get_db
 from dependencies.auth import get_current_user
-
 from config.settings import settings
-
 from services.integration_service import (
     create_or_update_integration,
     get_notion_integration,
     disconnect_integration,
 )
-
 from services.notion.mcp_client import (
     NotionMCPClient,
 )
-
 from services.notion.oauth import (
     discover_mcp_oauth,
     generate_pkce,
@@ -407,55 +401,42 @@ async def callback_notion(
     # 6. Extract tokens
     # -----------------------------------------------------
 
-    notion_access_token = (
-        tokens.get(
-            "access_token"
-        )
-    )
-
-    notion_refresh_token = (
-        tokens.get(
-            "refresh_token"
-        )
-    )
+    notion_access_token = tokens.get("access_token")
+    notion_refresh_token = tokens.get("refresh_token")
 
     if not notion_access_token:
-
         raise HTTPException(
             status_code=400,
-            detail=(
-                "Notion access token missing "
-                "from token response."
-            ),
+            detail="Notion access token missing from token response.",
         )
 
+    # NEW: compute expiry from expires_in (seconds), if Notion returns one
+    expires_in = tokens.get("expires_in")
+    token_expires_at = (
+        datetime.utcnow() + timedelta(seconds=int(expires_in))
+        if expires_in is not None
+        else None
+    )
     # -----------------------------------------------------
     # 7. Save user's Notion integration
     # -----------------------------------------------------
 
     try:
-
         create_or_update_integration(
-            db=db,
-            user_id=current_user.id,
-            provider="notion",
-            access_token=(
-                notion_access_token
-            ),
-            refresh_token=(
-                notion_refresh_token
-            ),
-        )
+                db=db,
+                user_id=current_user.id,
+                provider="notion",
+                access_token=notion_access_token,
+                refresh_token=notion_refresh_token,
+                client_id=client_id,               
+                expires_at=token_expires_at,       
+            )
 
     except Exception as e:
-
-        raise HTTPException(
-            status_code=500,
-            detail=(
-                f"Failed to save Notion "
-                f"integration: {str(e)}"
-            ),
-        )
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to save Notion integration: {str(e)}",
+            )
 
     # -----------------------------------------------------
     # 8. Redirect back to frontend
@@ -759,3 +740,5 @@ async def test_notion_search(
     return {
         "result": str(result)
     }
+
+    

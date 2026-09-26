@@ -1,6 +1,7 @@
 import uuid
-from sqlalchemy import (String,Boolean,Text,ForeignKey)
-from sqlalchemy.orm import (Mapped,mapped_column)
+from datetime import datetime
+from sqlalchemy import (String, Boolean, Text, ForeignKey, DateTime)
+from sqlalchemy.orm import (Mapped, mapped_column)
 
 from database.base import Base
 
@@ -37,4 +38,15 @@ class UserIntegration(Base):
     connected: Mapped[bool] = mapped_column(
         Boolean,
         default=False
+    )
+
+    
+    notion_client_id: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True
+    )
+
+    token_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime,
+        nullable=True
     )

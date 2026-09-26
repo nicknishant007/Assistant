@@ -1,3 +1,4 @@
+from datetime import datetime
 from sqlalchemy.orm import Session
 
 from database.models.user_integration import UserIntegration
@@ -45,7 +46,9 @@ def create_or_update_integration(
     user_id: str,
     provider: str,
     access_token: str,
-    refresh_token: str | None
+    refresh_token: str | None,
+    client_id: str | None = None,
+    expires_at: datetime | None = None
 ):
     integration = get_integration(
         db=db,
@@ -59,6 +62,12 @@ def create_or_update_integration(
         if refresh_token:
             integration.refresh_token = refresh_token
 
+        if client_id is not None:
+            integration.notion_client_id = client_id
+
+        if expires_at is not None:
+            integration.token_expires_at = expires_at
+
         integration.connected = True
 
     else:
@@ -67,6 +76,8 @@ def create_or_update_integration(
             provider=provider,
             access_token=access_token,
             refresh_token=refresh_token,
+            notion_client_id=client_id,
+            token_expires_at=expires_at,
             connected=True
         )
 
@@ -83,12 +94,6 @@ def disconnect_integration(
     user_id: str,
     provider: str
 ):
-    """
-    Marks an integration as disconnected and clears its tokens.
-    Does not delete the row, so reconnecting later is just an
-    update rather than a fresh insert.
-    """
-
     integration = get_integration(
         db=db,
         user_id=user_id,
