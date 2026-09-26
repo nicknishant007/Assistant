@@ -213,7 +213,7 @@ async def search_notion(
     max_highlight_length: int = 200,
 ):
 
-    client = _get_notion_client(
+    client = await _get_notion_client(
         db=db,
         user_id=user_id,
     )
