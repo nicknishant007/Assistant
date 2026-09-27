@@ -1,6 +1,6 @@
 # 🚀 NuroFlow
 
-> An intelligent AI workflow assistant that understands natural-language requests, generates structured workflows, and executes them across connected services.
+> An intelligent AI workflow assistant that understands natural-language(speech and text) requests, generates structured workflows, and executes them across connected services.
 
 ---
 
@@ -65,6 +65,7 @@ NuroFlow uses specialized agents for different responsibilities:
 - Response Agent
 
 Each component has a focused responsibility within the overall workflow.
+
 
 ### 🔀 Domain-Based Planning
 
@@ -814,6 +815,34 @@ For example:
 The Calendar Planner determines the required workflow, while the Calendar Executor performs the actual operations.
 
 ---
+###🎙️ Voice Assistant Workflow
+
+NuroFlow supports full voice interaction — speak a request, and NuroFlow transcribes it, runs it through the same planner → executor → validator → response pipeline used for text, then speaks the answer back.
+
+Microphone (browser)
+      ↓
+MediaRecorder captures audio (webm)
+      ↓
+POST /voice  (multipart form: file + optional conversation_id)
+      ↓
+Speech-to-Text (faster-whisper)
+      ↓
+Transcribed text
+      ↓
+chat_service()  ← same graph as /chat: Planner → Domain Planner
+                   → Executor → Validator → Response Agent
+      ↓
+Final text response
+      ↓
+Text-to-Speech (edge-tts)
+      ↓
+MP3 encoded as base64
+      ↓
+JSON Response { conversation_id, response, user_message, audio_base64 }
+      ↓
+Frontend decodes audio → plays it + shows both transcript and reply
+
+Voice is not a separate assistant brain. It's a different client on top of the same LangGraph agent.
 
 ## 11. 🔐 Authentication
 
