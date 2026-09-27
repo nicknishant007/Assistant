@@ -815,36 +815,139 @@ For example:
 The Calendar Planner determines the required workflow, while the Calendar Executor performs the actual operations.
 
 ---
-###🎙️ Voice Assistant Workflow
+## 11.🎙️ Voice Assistant Workflow
 
 NuroFlow supports full voice interaction — speak a request, and NuroFlow transcribes it, runs it through the same planner → executor → validator → response pipeline used for text, then speaks the answer back.
 
-Microphone (browser)
-      ↓
-MediaRecorder captures audio (webm)
-      ↓
-POST /voice  (multipart form: file + optional conversation_id)
-      ↓
-Speech-to-Text (faster-whisper)
-      ↓
-Transcribed text
-      ↓
-chat_service()  ← same graph as /chat: Planner → Domain Planner
-                   → Executor → Validator → Response Agent
-      ↓
-Final text response
-      ↓
-Text-to-Speech (edge-tts)
-      ↓
-MP3 encoded as base64
-      ↓
-JSON Response { conversation_id, response, user_message, audio_base64 }
-      ↓
-Frontend decodes audio → plays it + shows both transcript and reply
+### Voice Assistant Workflow
+
+```text
+┌─────────────────────────────┐
+│ User speaks in browser      │
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│ MediaRecorder captures      │
+│ audio (.webm)               │
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│ POST /voice                 │
+│ multipart/form-data         │
+│ • file                      │
+│ • conversation_id (optional)│
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│ Speech-to-Text              │
+│ Faster-Whisper              │
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│ Transcribed User Message    │
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│ Chat Service                │
+│ Same pipeline as /chat      │
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│ Planner Agent              │
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│ Domain Planner             │
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│ Executor Agent             │
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│ Validator Agent            │
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│ Response Agent             │
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│ Final Text Response         │
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│ Text-to-Speech              │
+│ Edge-TTS                    │
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│ MP3 converted to Base64     │
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│ JSON Response               │
+│ {                           │
+│   conversation_id,          │
+│   user_message,             │
+│   response,                 │
+│   audio_base64              │
+│ }                           │
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│ Frontend                    │
+│ • Displays transcript       │
+│ • Displays AI response      │
+│ • Decodes Base64 audio      │
+│ • Plays synthesized speech  │
+└─────────────────────────────┘
+```
+
+#### Voice Processing Pipeline
+
+1. User records audio using the browser's `MediaRecorder` API.
+2. Audio is sent to the backend via the `/voice` endpoint.
+3. `Faster-Whisper` converts speech into text.
+4. The transcribed text is processed through the same agentic workflow used by the chat endpoint:
+   - Planner Agent
+   - Domain Planner
+   - Executor Agent
+   - Validator Agent
+   - Response Agent
+5. The generated response is converted into speech using `Edge-TTS`.
+6. Audio is encoded as Base64 and returned alongside the text response.
+7. The frontend decodes and plays the audio while displaying both the user's transcript and the assistant's response.
+
+#### API Response
+
+```json
+{
+  "conversation_id": "conv_123",
+  "user_message": "What meetings do I have today?",
+  "response": "You have 3 meetings scheduled today.",
+  "audio_base64": "<base64_encoded_mp3>"
+}
+```
 
 Voice is not a separate assistant brain. It's a different client on top of the same LangGraph agent.
-
-## 11. 🔐 Authentication
+---
+## 12. 🔐 Authentication
 
 NuroFlow uses different authentication mechanisms for the application itself and for external service integrations.
 
@@ -898,7 +1001,7 @@ This separates application authentication from third-party service authorization
 
 ---
 
-## 12. 💬 Conversation History & Context
+## 13. 💬 Conversation History & Context
 
 NuroFlow maintains conversation history so that follow-up requests can be understood using previous interactions.
 
@@ -959,7 +1062,7 @@ Conversation history therefore becomes an important part of the agent's working 
 
 ---
 
-## 13. ❓ Clarification Flow
+## 14. ❓ Clarification Flow
 
 NuroFlow does not always generate a workflow immediately.
 
@@ -1016,7 +1119,7 @@ The graph then ends the current execution and waits for the user's next message.
 
 ---
 
-## 14. ✅ Validation & Retry Mechanism
+## 15. ✅ Validation & Retry Mechanism
 
 NuroFlow contains a validation layer between workflow execution and the final response.
 
@@ -1091,7 +1194,7 @@ This provides a limit on how many times a failed workflow can be replanned and r
                       Validate
 
 The validation layer provides a reliability boundary between LLM-generated workflows and actual tool execution.
-## 15. 📁 Project Structure
+## 16. 📁 Project Structure
 
 NuroFlow follows a modular project structure where agents, tools, services, API routes, prompts, and application state are separated based on their responsibilities.
 
@@ -1170,7 +1273,7 @@ The separation keeps the codebase modular and makes it easier to extend NuroFlow
 
 ---
 
-## 16. 🧰 Tech Stack
+## 17. 🧰 Tech Stack
 
 NuroFlow is built using a combination of backend, agent orchestration, database, authentication, and integration technologies.
 
@@ -1234,7 +1337,7 @@ The major components work together as:
 
 ---
 
-## 17. 🔑 Environment Variables
+## 18. 🔑 Environment Variables
 
 NuroFlow uses environment variables for credentials, database configuration, authentication settings, and external service integrations.
 
@@ -1290,7 +1393,7 @@ Example:
 
 ---
 
-## 18. 🚀 Installation & Setup
+## 19. 🚀 Installation & Setup
 
 ### 1. Clone the Repository
 
@@ -1350,7 +1453,7 @@ Redis can be used by application components that require fast temporary state or
 
 ---
 
-## 19. ▶️ Running the Project
+## 20. ▶️ Running the Project
 
 After completing the setup, start the FastAPI backend using:
 
@@ -1401,7 +1504,7 @@ Once the application is running:
 
 ---
 
-## 20. 🌐 API Endpoints
+## 21. 🌐 API Endpoints
 
 NuroFlow exposes FastAPI endpoints for authentication, integrations, and application operations.
 
@@ -1448,7 +1551,7 @@ The Swagger interface allows requests to be tested directly against the backend.
 
 ---
 
-## 21. 💡 Example User Queries
+## 22. 💡 Example User Queries
 
 NuroFlow is designed to accept natural-language requests instead of requiring users to understand the underlying tools.
 
@@ -1513,7 +1616,7 @@ Conceptually, the system can execute:
 
 The user only needs to describe the desired outcome; NuroFlow handles the workflow generation and execution internally.
 
-## 22. 🚀 Example Usage
+## 23. 🚀 Example Usage
 
 NuroFlow is designed to let users describe tasks naturally without needing to know the underlying tools or APIs.
 
@@ -1590,7 +1693,7 @@ The second request can be interpreted using information from the previous conver
 
 ---
 
-## 23. ☁️ Deployment Architecture
+## 24. ☁️ Deployment Architecture
 
 NuroFlow can be deployed as separate frontend and backend applications.
 
@@ -1660,7 +1763,7 @@ The corresponding production redirect URI must also be configured in the externa
 
 ---
 
-## 24. 🧠 Design Decisions
+## 25. 🧠 Design Decisions
 
 NuroFlow is designed around separating **reasoning, planning, execution, and validation**.
 
@@ -1754,7 +1857,7 @@ Maintaining conversation context allows the system to understand references and 
 
 ---
 
-## 25. ✅ Current Capabilities
+## 26. ✅ Current Capabilities
 
 The current NuroFlow implementation includes the following capabilities:
 
@@ -1811,7 +1914,7 @@ The current NuroFlow implementation includes the following capabilities:
 
 ---
 
-## 26. ⚠️ Limitations
+## 27. ⚠️ Limitations
 
 Although NuroFlow supports multi-step agent workflows, several areas are still under development.
 
@@ -1861,7 +1964,7 @@ Additional work may be required for areas such as:
 
 ---
 
-## 27. 🛣️ Future Roadmap
+## 28. 🛣️ Future Roadmap
 
 NuroFlow is designed so additional capabilities can be introduced without changing the complete architecture.
 
@@ -1917,7 +2020,7 @@ The same planner/executor architecture can be extended to support more complex w
 
 ---
 
-## 28. 📄 License
+## 29. 📄 License
 
 The project license can be added here once the repository license is finalized.
 
