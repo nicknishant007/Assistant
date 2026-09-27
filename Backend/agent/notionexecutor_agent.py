@@ -1,5 +1,5 @@
+import json
 import re
-
 from tools.notiontool_registry import TOOLS
 from agent.state import AgentState
 from langsmith import traceable
@@ -125,7 +125,23 @@ def notion_executor_agent(
 ) -> AgentState:
 
     workflow = state.workflow
+    # --------------------------------------------------------
+    # NORMALIZE PREVIOUS STEP RESULTS
+    # --------------------------------------------------------
 
+    for step_key, step_result in list(
+        state.step_results.items()
+    ):
+
+        if isinstance(step_result, str):
+
+            try:
+                state.step_results[step_key] = json.loads(
+                    step_result
+                )
+
+            except json.JSONDecodeError:
+                pass
     print("\nWORKFLOW:")
     print(workflow)
 
@@ -310,18 +326,30 @@ def notion_executor_agent(
     # --------------------------------------------------------
     # SAVE RESULT
     # --------------------------------------------------------
+        # --------------------------------------------------------
+    # NORMALIZE CURRENT RESULT
+    # --------------------------------------------------------
+
+    if isinstance(result, str):
+
+        try:
+            result = json.loads(result)
+
+        except json.JSONDecodeError:
+            pass
 
     print(
         "\n========== NOTION TOOL RESULT =========="
     )
     print("STEP ID:", step_id)
     print("TOOL:", tool_name)
+    print("RESULT TYPE:", type(result).__name__)
     print("RESULT:", result)
 
     state.step_results[
         step_id
     ] = result
-
+    
     state.step_status[
         step_id
     ] = "completed"
